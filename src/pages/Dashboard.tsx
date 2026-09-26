@@ -6,6 +6,7 @@ import { useAppStore } from '../store/useAppStore'
 import { TrendingDown, TrendingUp, Building, CalendarClock, AlertTriangle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { format, startOfMonth, endOfMonth, parseISO, addDays, isBefore, startOfDay, isAfter } from 'date-fns'
+import { parseDateSafe } from '../lib/dateUtils'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -128,7 +129,8 @@ export default function Dashboard() {
         tDespesas += valor
         
         // Agrupamentos (somente despesas)
-        const dia = format(parseISO(lanc.data_competencia), 'dd/MM')
+        // Correção do fuso horário para os gráficos
+        const dia = format(parseDateSafe(lanc.data_competencia)!, 'dd/MM')
         mapaDiario.set(dia, (mapaDiario.get(dia) || 0) + valor)
 
         const cc = lanc.centro_custo?.nome || 'Sem C.Custo'

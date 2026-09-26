@@ -6,6 +6,7 @@ import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Lock, Unlock, Calendar } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { format, parse } from 'date-fns'
+import { parseDateSafe } from '../lib/dateUtils'
 import { ptBR } from 'date-fns/locale'
 
 interface Periodo {
@@ -167,7 +168,7 @@ export default function Fechamento() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {periodos.map((periodo) => {
-              const dataComp = parse(periodo.competencia, 'yyyy-MM-dd', new Date())
+              const dataComp = parseDateSafe(periodo.competencia)!
               const mesNome = format(dataComp, 'MMMM', { locale: ptBR })
               const isFechado = periodo.status === 'fechado'
 
