@@ -137,9 +137,9 @@ export default function Layout({ children }: LayoutProps) {
   const SidebarContent = () => (
     <>
       {/* Top Section */}
-      <div>
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col pb-4">
         {/* Logo Area */}
-        <div className={`h-16 flex items-center relative mb-2 mt-1 ${sidebarCollapsed ? 'justify-center' : 'px-4'}`}>
+        <div className={`shrink-0 h-16 flex items-center relative mb-2 mt-1 ${sidebarCollapsed ? 'justify-center' : 'px-4'}`}>
           <Link to="/" className="flex items-center gap-2.5 text-primary font-bold text-lg overflow-hidden">
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <span className="text-primary text-lg font-black tracking-tighter">CF</span>
@@ -298,7 +298,7 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Bottom Section */}
-      <div className="p-3 space-y-0.5 mb-1">
+      <div className="p-3 space-y-0.5 shrink-0 bg-white border-t border-slate-100">
 
         <button 
           onClick={handleLogout}
