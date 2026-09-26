@@ -218,9 +218,9 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 **Objetivo:** Implementar o fluxo real de convite de usuários na equipe via Supabase Admin Auth e corrigir refinamentos estéticos remanescentes.
 
 **Tarefas Planejadas:**
-- [ ] 1. **Correção UI - Botão do Menu:** Corrigir o botão de recolher/expandir o menu lateral (Desktop) que ficou com a borda direita cortada devido ao overflow do scroll.
-- [ ] 2. **Correção UI - Centralização de Telas:** Centralizar as páginas de "Configurações" e "Fechamento" (que estão alinhadas esticadas à esquerda na tela grande), aplicando classes para mantê-las em largura máxima focada (`max-w-5xl mx-auto`).
-- [ ] 3. **Correção UI - Input de Data (Dashboard):** Fixar uma largura mínima no `<input type="month">` do Dashboard/DRE/Relatórios no Desktop, que ficou "espremido" (`setembro de...`) com as mudanças anteriores.
+- [x] 1. **Correção UI - Botão do Menu:** Corrigir o botão de recolher/expandir o menu lateral (Desktop) que ficou com a borda direita cortada devido ao overflow do scroll.
+- [x] 2. **Correção UI - Centralização de Telas:** Centralizar as páginas de "Configurações" e "Fechamento" (que estão alinhadas esticadas à esquerda na tela grande), aplicando classes para mantê-las em largura máxima focada (`max-w-5xl mx-auto`).
+- [x] 3. **Correção UI - Input de Data (Dashboard):** Fixar uma largura mínima no `<input type="month">` do Dashboard/DRE/Relatórios no Desktop, que ficou "espremido" (`setembro de...`) com as mudanças anteriores.
 - [ ] 4. **Integração Backend - Convite de Usuário:**
    - Remover o aviso temporário ("Para adicionar novos usuários...") e criar o fluxo real.
    - Utilizar as rotas do Supabase (`admin.createUser` via Edge Function) ou Magic Link para convidar novos emails.
@@ -228,7 +228,7 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 
 *Pipeline de Execução:*
 - [x] 1. Registro e Planejamento.
-- [ ] 2. Ajustes Visuais (Menu, Centralização e Data).
+- [x] 2. Ajustes Visuais (Menu, Centralização e Data).
 - [ ] 3. Criação da Edge Function / Rotas de Convite.
 - [ ] 4. Testes do Fluxo de Novos Usuários.
 - [ ] 5. Release Decision.
