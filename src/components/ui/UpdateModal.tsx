@@ -1,6 +1,6 @@
 import React from 'react'
 import Modal from './Modal'
-import { Button } from './Button'
+import Button from './Button'
 import { RefreshCw } from 'lucide-react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
