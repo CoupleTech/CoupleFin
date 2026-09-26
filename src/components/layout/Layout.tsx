@@ -149,18 +149,6 @@ export default function Layout({ children }: LayoutProps) {
             )}
           </Link>
 
-          {/* Botão colapsar — só desktop (Flutuante na borda direita) */}
-          <button
-            onClick={toggleSidebar}
-            className="hidden lg:flex items-center justify-center w-6 h-6 bg-white border border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 rounded-full transition-all duration-fast shadow-sm absolute top-1/2 -translate-y-1/2 -right-3 z-50"
-            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="w-3.5 h-3.5" />
-            ) : (
-              <ChevronLeft className="w-3.5 h-3.5" />
-            )}
-          </button>
 
           {/* Botão fechar — só mobile */}
           {!sidebarCollapsed && (
@@ -331,6 +319,19 @@ export default function Layout({ children }: LayoutProps) {
         style={{ zIndex: 'var(--z-sidebar)' }}
       >
         <SidebarContent />
+
+        {/* Botão colapsar — só desktop (Flutuante na borda direita) */}
+        <button
+          onClick={toggleSidebar}
+          className="hidden lg:flex items-center justify-center w-6 h-6 bg-white border border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 rounded-full transition-all duration-fast shadow-sm absolute top-[28px] -right-3 z-50"
+          title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5" />
+          )}
+        </button>
       </aside>
 
       {/* ===== SIDEBAR MOBILE (Drawer) ===== */}

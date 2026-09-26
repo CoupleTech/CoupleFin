@@ -150,21 +150,22 @@ export default function Equipe() {
 
   return (
     <Layout>
-      <PageHeader
-        title="Equipe e Usuários"
-        subtitle="Gerencie os acessos, perfis e vínculos das pessoas no sistema."
-        action={
-          <Button 
-            onClick={() => toast.info("Para adicionar novos usuários com segurança, o administrador deve enviar um convite via backend. Esta função será integrada na fase de Finalização.")} 
-            icon={<Shield className="w-4 h-4" />}
-            variant="secondary"
-          >
-            Convidar Usuário
-          </Button>
-        }
-      />
+      <div className="max-w-5xl mx-auto space-y-6">
+        <PageHeader
+          title="Equipe e Usuários"
+          subtitle="Gerencie os acessos, perfis e vínculos das pessoas no sistema."
+          action={
+            <Button 
+              onClick={() => toast.info("Para adicionar novos usuários com segurança, o administrador deve enviar um convite via backend. Esta função será integrada na fase de Finalização.")} 
+              icon={<Shield className="w-4 h-4" />}
+              variant="secondary"
+            >
+              Convidar Usuário
+            </Button>
+          }
+        />
 
-      {loading ? (
+        {loading ? (
         <PageLoading />
       ) : usuarios.length === 0 ? (
         <EmptyState
@@ -405,6 +406,7 @@ export default function Equipe() {
           </div>
         </form>
       </Modal>
+      </div>
     </Layout>
   )
 }

@@ -130,21 +130,22 @@ export default function Fechamento() {
 
   return (
     <Layout>
-      <PageHeader
-        title="Fechamento de Mês"
-        subtitle="Congele e proteja os meses já consolidados contra alterações na base de dados."
-      />
-
-      {loading && periodos.length === 0 ? (
-        <PageLoading />
-      ) : !empresaAtivaId ? (
-        <EmptyState
-          icon={<Lock className="w-full h-full text-slate-400" />}
-          title="Selecione uma empresa"
-          description="O fechamento de período é específico por CNPJ."
+      <div className="max-w-5xl mx-auto space-y-6">
+        <PageHeader
+          title="Fechamento de Mês"
+          subtitle="Congele e proteja os meses já consolidados contra alterações na base de dados."
         />
-      ) : (
-        <div className="space-y-6 max-w-5xl">
+
+        {loading && periodos.length === 0 ? (
+          <PageLoading />
+        ) : !empresaAtivaId ? (
+          <EmptyState
+            icon={<Lock className="w-full h-full text-slate-400" />}
+            title="Selecione uma empresa"
+            description="O fechamento de período é específico por CNPJ."
+          />
+        ) : (
+          <div className="space-y-6">
           
           <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-3">
@@ -218,8 +219,9 @@ export default function Fechamento() {
             })}
           </div>
 
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </Layout>
   )
 }

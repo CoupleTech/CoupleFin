@@ -136,21 +136,22 @@ export default function Configuracoes() {
 
   return (
     <Layout>
-      <PageHeader
-        title="Configurações e Identidade"
-        subtitle="Personalize a aparência do sistema e da empresa selecionada."
-      />
-
-      {loading ? (
-        <PageLoading />
-      ) : !empresaAtivaId ? (
-        <EmptyState
-          icon={<Settings className="w-full h-full text-slate-400" />}
-          title="Selecione uma empresa"
-          description="Você precisa selecionar uma empresa no cabeçalho para configurá-la."
+      <div className="max-w-5xl mx-auto space-y-6">
+        <PageHeader
+          title="Configurações e Identidade"
+          subtitle="Personalize a aparência do sistema e da empresa selecionada."
         />
-      ) : (
-        <form onSubmit={handleSalvar} className="max-w-4xl space-y-6">
+
+        {loading ? (
+          <PageLoading />
+        ) : !empresaAtivaId ? (
+          <EmptyState
+            icon={<Settings className="w-full h-full text-slate-400" />}
+            title="Selecione uma empresa"
+            description="Você precisa selecionar uma empresa no cabeçalho para configurá-la."
+          />
+        ) : (
+          <form onSubmit={handleSalvar} className="space-y-6">
           
           {/* Seção Usuário */}
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
@@ -279,7 +280,8 @@ export default function Configuracoes() {
             </Button>
           </div>
         </form>
-      )}
+        )}
+      </div>
     </Layout>
   )
 }
