@@ -12,7 +12,7 @@ export default defineConfig({
         name: 'CoupleFin',
         short_name: 'CoupleFin',
         description: 'Gestor Financeiro Multiempresas',
-        theme_color: '#0ea5e9',
+        theme_color: '#f97316',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [
