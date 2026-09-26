@@ -5,6 +5,7 @@ import { Button, Input, PageHeader, EmptyState } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Settings, Save, Palette } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { toast } from '../store/useToastStore'
 
 export default function Configuracoes() {
   const { user, setUser, empresaAtivaId, empresas } = useAppStore()
@@ -87,7 +88,7 @@ export default function Configuracoes() {
       // Senha
       if (userProfile.senha) {
         if (userProfile.senha !== userProfile.confirmarSenha) {
-          alert('As senhas não conferem.')
+          toast.error('As senhas não conferem.')
           setIsSubmitting(false)
           return
         }
@@ -96,7 +97,7 @@ export default function Configuracoes() {
       }
     } catch (err: any) {
       erroUsuario = true
-      alert("Erro ao atualizar perfil do usuário: " + err.message)
+      toast.error("Erro ao atualizar perfil do usuário: " + err.message)
     }
 
     // 2. Salvar Cores do Grupo (Upsert)
@@ -121,9 +122,9 @@ export default function Configuracoes() {
     setIsSubmitting(false)
     if (!erroUsuario) {
       if (configError) {
-        alert("Erro ao salvar configurações de cores: " + configError.message)
+        toast.error("Erro ao salvar configurações de cores: " + configError.message)
       } else {
-        alert("Configurações salvas com sucesso!")
+        toast.success("Configurações salvas com sucesso!")
         setUserProfile(prev => ({ ...prev, senha: '', confirmarSenha: '' })) // Limpa senhas
         
         // Aplica as cores na raiz do documento imediatamente

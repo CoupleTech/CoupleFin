@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Bell, Check, ExternalLink } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAppStore } from '../../store/useAppStore'
+import { toast } from '../../store/useToastStore'
 
 export interface Notificacao {
   id: string
@@ -158,8 +159,8 @@ export function NotificationDropdown() {
                 const { subscribeToWebPush } = await import('../../lib/webpush')
                 if (user?.id) {
                   const success = await subscribeToWebPush(user.id)
-                  if (success) alert('Notificações ativadas com sucesso no navegador!')
-                  else alert('Falha ao ativar notificações. Verifique as permissões ou se VAPID KEY está configurada.')
+                  if (success) toast.success('Notificações ativadas com sucesso no navegador!')
+                  else toast.error('Falha ao ativar notificações. Verifique as permissões ou se VAPID KEY está configurada.')
                 }
               }}
               className="w-full text-xs text-center py-1.5 text-slate-500 hover:text-primary transition-colors font-medium"

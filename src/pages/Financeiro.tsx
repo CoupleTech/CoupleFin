@@ -21,6 +21,7 @@ import { useAppStore } from '../store/useAppStore'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { isPeriodoFechado } from '../lib/gatekeeper'
 import { usePagination } from '../hooks/usePagination'
+import { toast } from '../store/useToastStore'
 
 interface Lancamento {
   id: string
@@ -138,7 +139,7 @@ export default function Financeiro() {
     // GATEKEEPER
     const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
     if (fechado) {
-      alert("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seu status.")
+      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seu status.")
       setIsSubmitting(false)
       setIsModalBaixaOpen(false)
       return
@@ -176,7 +177,7 @@ export default function Financeiro() {
     // GATEKEEPER
     const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
     if (fechado) {
-      alert("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível estornar um lançamento desse período.")
+      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível estornar um lançamento desse período.")
       setIsSubmitting(false)
       setIsModalEstornoOpen(false)
       return

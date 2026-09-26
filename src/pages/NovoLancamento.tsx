@@ -9,6 +9,7 @@ import imageCompression from 'browser-image-compression'
 import { isPeriodoFechado } from '../lib/gatekeeper'
 import { Html5QrcodeScanner } from 'html5-qrcode'
 import { format } from 'date-fns'
+import { toast } from '../store/useToastStore'
 
 const tiposLancamento = [
   { value: 'nota_fiscal', label: 'Nota Fiscal' },
@@ -153,7 +154,7 @@ export default function NovoLancamento() {
     // VALIDACAO DO GATEKEEPER
     const fechado = await isPeriodoFechado(empresaAtivaId, formData.data_competencia)
     if (fechado) {
-      alert("⚠️ ERRO: A data de competência selecionada pertence a um mês já FECHADO. Não é possível registrar lançamentos neste período.")
+      toast.error("⚠️ ERRO: A data de competência selecionada pertence a um mês já FECHADO. Não é possível registrar lançamentos neste período.")
       setIsSubmitting(false)
       return
     }
@@ -190,7 +191,7 @@ export default function NovoLancamento() {
     const { data: lancamento, error } = await supabase.from('lancamentos').insert([payload]).select().single()
     
     if (error) {
-      alert("Erro ao salvar lançamento: " + error.message)
+      toast.error("Erro ao salvar lançamento: " + error.message)
       setIsSubmitting(false)
       return
     }

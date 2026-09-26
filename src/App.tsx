@@ -22,6 +22,7 @@ import Fechamento from './pages/Fechamento'
 import DRE from './pages/DRE'
 import Relatorios from './pages/Relatorios'
 import { UpdateModal } from './components/ui/UpdateModal'
+import { ToastContainer } from './components/ui/ToastContainer'
 
 function App() {
   const [loading, setLoading] = useState(true)
@@ -134,6 +135,7 @@ function App() {
         <Route path="/configuracoes" element={user ? <Configuracoes /> : <Navigate to="/login" />} />
       </Routes>
       <UpdateModal />
+      <ToastContainer />
     </Router>
   )
 }

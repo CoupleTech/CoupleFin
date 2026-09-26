@@ -12,6 +12,7 @@ import {
   ArrowUpRight
 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { toast } from '../store/useToastStore'
 import { format, isBefore, isToday, isThisWeek, isThisMonth, parseISO, startOfDay } from 'date-fns'
 import { isPeriodoFechado } from '../lib/gatekeeper'
 
@@ -96,7 +97,7 @@ export default function ContasPagar() {
     // GATEKEEPER
     const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
     if (fechado) {
-      alert("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seu status.")
+      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seu status.")
       setIsSubmitting(false)
       setIsModalBaixaOpen(false)
       return

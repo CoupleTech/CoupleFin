@@ -6,6 +6,7 @@ import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Users, Edit2, Shield, Check, XCircle, Building, Search } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { usePagination } from '../hooks/usePagination'
+import { toast } from '../store/useToastStore'
 
 interface Usuario {
   id: string
@@ -154,7 +155,7 @@ export default function Equipe() {
         subtitle="Gerencie os acessos, perfis e vínculos das pessoas no sistema."
         action={
           <Button 
-            onClick={() => alert("Para adicionar novos usuários com segurança, o administrador deve enviar um convite via backend (Supabase Admin Auth). Esta função será integrada na fase de PWA/Finalização.")} 
+            onClick={() => toast.info("Para adicionar novos usuários com segurança, o administrador deve enviar um convite via backend. Esta função será integrada na fase de Finalização.")} 
             icon={<Shield className="w-4 h-4" />}
             variant="secondary"
           >
