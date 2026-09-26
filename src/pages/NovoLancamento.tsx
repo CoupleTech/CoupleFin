@@ -57,7 +57,7 @@ export default function NovoLancamento() {
     valor: '',
     descricao: '',
     data_competencia: format(new Date(), 'yyyy-MM-dd'),
-    data_vencimento: '',
+    data_vencimento: format(new Date(), 'yyyy-MM-dd'),
     data_pagamento: '',
     ja_pago: false, // helper para UI
     
@@ -383,7 +383,16 @@ export default function NovoLancamento() {
                   type="date"
                   required
                   value={formData.data_competencia}
-                  onChange={(e) => setFormData({...formData, data_competencia: e.target.value})}
+                  onChange={(e) => {
+                    const newVal = e.target.value
+                    setFormData(prev => ({
+                      ...prev, 
+                      data_competencia: newVal,
+                      data_vencimento: (prev.data_vencimento === prev.data_competencia || !prev.data_vencimento) ? newVal : prev.data_vencimento,
+                      // Se já estiver pago e a data de pagamento estiver igual à competência anterior, avança ela também
+                      data_pagamento: prev.ja_pago && (prev.data_pagamento === prev.data_competencia || !prev.data_pagamento) ? newVal : prev.data_pagamento
+                    }))
+                  }}
                 />
                 <Input
                   label="Data de Vencimento"
