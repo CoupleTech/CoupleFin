@@ -10,7 +10,6 @@ import {
   Users, 
   Settings,
   LogOut,
-  Bell,
   Menu,
   ChevronDown,
   ChevronRight,

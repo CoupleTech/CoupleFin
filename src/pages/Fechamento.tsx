@@ -5,7 +5,7 @@ import { Button, Select, Badge, EmptyState, PageHeader } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Lock, Unlock, Calendar } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
-import { format, parse } from 'date-fns'
+import { format } from 'date-fns'
 import { parseDateSafe } from '../lib/dateUtils'
 import { ptBR } from 'date-fns/locale'
 
