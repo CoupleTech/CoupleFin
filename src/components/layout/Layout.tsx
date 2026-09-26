@@ -306,36 +306,14 @@ export default function Layout({ children }: LayoutProps) {
           title={sidebarCollapsed ? 'Sair' : undefined}
           className={`
             w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium 
-            text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg 
+            text-primary border border-primary hover:bg-primary/10 rounded-lg 
             transition-all duration-fast
             ${sidebarCollapsed ? 'justify-center px-0' : ''}
           `}
         >
-          <LogOut className="w-5 h-5 text-slate-400 shrink-0" />
+          <LogOut className="w-5 h-5 shrink-0" />
           {!sidebarCollapsed && <span>Sair</span>}
         </button>
-
-        {/* User info */}
-        {!sidebarCollapsed && (
-          <div className="pt-3 mt-1 border-t border-slate-100 flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
-              {user?.nome?.charAt(0).toUpperCase()}
-            </div>
-            <div className="overflow-hidden flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-800 truncate">{user?.nome}</p>
-              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Avatar only when collapsed */}
-        {sidebarCollapsed && (
-          <div className="pt-3 mt-1 border-t border-slate-100 flex justify-center">
-            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">
-              {user?.nome?.charAt(0).toUpperCase()}
-            </div>
-          </div>
-        )}
       </div>
     </>
   )
@@ -436,21 +414,6 @@ export default function Layout({ children }: LayoutProps) {
               </div>
             )}
 
-            {/* Search */}
-            <div className="relative hidden md:block">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text" 
-                placeholder="Buscar..." 
-                className="
-                  pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm 
-                  focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary 
-                  w-44 lg:w-56 transition-all duration-fast
-                  placeholder:text-slate-400
-                "
-              />
-            </div>
-
             {/* Notifications */}
             <button className="
               w-9 h-9 sm:w-10 sm:h-10 
@@ -462,12 +425,23 @@ export default function Layout({ children }: LayoutProps) {
               <Bell className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
               <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-2 h-2 bg-danger rounded-full border-2 border-white" />
             </button>
+
+            {/* User Info no Header */}
+            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 ml-1 sm:ml-2 border-l border-slate-200">
+              <div className="hidden md:block text-right overflow-hidden min-w-0 max-w-[120px] lg:max-w-[160px]">
+                <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{user?.nome}</p>
+                <p className="text-xs text-slate-500 truncate leading-tight">{user?.email}</p>
+              </div>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm sm:text-base shrink-0 border border-primary/20">
+                {user?.nome?.charAt(0).toUpperCase()}
+              </div>
+            </div>
           </div>
         </header>
 
         {/* ===== PAGE CONTENT (Scrollable) ===== */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-[1600px] w-full mx-auto">
             {children}
           </div>
         </div>

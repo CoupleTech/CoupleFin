@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['icon-192.svg', 'icon-512.svg'],
       manifest: {
         name: 'CoupleFin',

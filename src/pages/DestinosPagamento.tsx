@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle } from '../components/ui'
+import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, Briefcase, Check, XCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, Briefcase, Check, XCircle, Search } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { usePagination } from '../hooks/usePagination'
 
 interface DestinoPagamento {
   id: string
@@ -36,6 +37,20 @@ export default function DestinosPagamento() {
     tipo: 'fornecedor',
     ativo: true
   })
+
+  const [busca, setBusca] = useState('')
+
+  const destinosFiltrados = destinos.filter(d => {
+    if (!busca) return true
+    const search = busca.toLowerCase()
+    return d.nome.toLowerCase().includes(search)
+  })
+
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(destinosFiltrados)
 
   useEffect(() => {
     if (empresaAtivaId) {
@@ -154,7 +169,18 @@ export default function DestinosPagamento() {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar por nome..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                icon={<Search className="w-4 h-4 text-slate-400" />}
+              />
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
@@ -167,7 +193,7 @@ export default function DestinosPagamento() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {destinos.map((destino) => {
+                {paginatedItems.map((destino) => {
                   const tipoObj = tiposDestino.find(t => t.value === destino.tipo)
                   return (
                     <tr key={destino.id} className="hover:bg-slate-50/50 transition-colors duration-fast group">
@@ -214,7 +240,7 @@ export default function DestinosPagamento() {
 
           {/* Mobile/Tablet Cards */}
           <div className="md:hidden divide-y divide-slate-100">
-            {destinos.map((destino) => {
+            {paginatedItems.map((destino) => {
               const tipoObj = tiposDestino.find(t => t.value === destino.tipo)
               return (
                 <div key={destino.id} className="p-4">
@@ -252,6 +278,14 @@ export default function DestinosPagamento() {
               )
             })}
           </div>
+          <Pagination
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
         </div>
       )}
 

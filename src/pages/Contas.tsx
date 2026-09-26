@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle } from '../components/ui'
+import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, Wallet, Check, XCircle, Landmark } from 'lucide-react'
+import { Plus, Edit2, Trash2, Wallet, Check, XCircle, Landmark, Search } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { usePagination } from '../hooks/usePagination'
 
 interface Conta {
   id: string
@@ -43,6 +44,20 @@ export default function Contas() {
     saldo_inicial: 0,
     ativo: true
   })
+
+  const [busca, setBusca] = useState('')
+
+  const contasFiltradas = contas.filter(c => {
+    if (!busca) return true
+    const search = busca.toLowerCase()
+    return c.nome.toLowerCase().includes(search) || (c.banco || '').toLowerCase().includes(search)
+  })
+
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(contasFiltradas)
 
   useEffect(() => {
     if (empresaAtivaId) {
@@ -177,7 +192,18 @@ export default function Contas() {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar por nome ou banco..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                icon={<Search className="w-4 h-4 text-slate-400" />}
+              />
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left">
@@ -192,7 +218,7 @@ export default function Contas() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {contas.map((conta) => {
+                {paginatedItems.map((conta) => {
                   const tipoObj = tiposConta.find(t => t.value === conta.tipo)
                   return (
                     <tr key={conta.id} className="hover:bg-slate-50/50 transition-colors duration-fast group">
@@ -255,7 +281,7 @@ export default function Contas() {
 
           {/* Mobile/Tablet Cards */}
           <div className="lg:hidden divide-y divide-slate-100">
-            {contas.map((conta) => {
+            {paginatedItems.map((conta) => {
               const tipoObj = tiposConta.find(t => t.value === conta.tipo)
               return (
                 <div key={conta.id} className="p-4">
@@ -315,6 +341,14 @@ export default function Contas() {
               )
             })}
           </div>
+          <Pagination
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
         </div>
       )}
 

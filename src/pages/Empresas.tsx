@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle } from '../components/ui'
+import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, Building, Check, XCircle, Image as ImageIcon } from 'lucide-react'
+import { Plus, Edit2, Trash2, Building, Check, XCircle, Image as ImageIcon, Search } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
+import { usePagination } from '../hooks/usePagination'
 
 interface Empresa {
   id: string
@@ -44,6 +45,22 @@ export default function Empresas() {
   
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string>('')
+
+  const [busca, setBusca] = useState('')
+
+  const empresasFiltradas = empresas.filter(e => {
+    if (!busca) return true
+    const search = busca.toLowerCase()
+    return (e.nome_fantasia || '').toLowerCase().includes(search) || 
+           (e.razao_social || '').toLowerCase().includes(search) || 
+           (e.cnpj || '').includes(search)
+  })
+
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(empresasFiltradas)
 
   useEffect(() => {
     carregarDados()
@@ -192,7 +209,18 @@ export default function Empresas() {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar por nome ou CNPJ..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                icon={<Search className="w-4 h-4 text-slate-400" />}
+              />
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
@@ -206,7 +234,7 @@ export default function Empresas() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {empresas.map((empresa) => {
+                {paginatedItems.map((empresa) => {
                   const grupoNome = grupos.find(g => g.id === empresa.grupo_id)?.nome || 'Desconhecido'
                   
                   return (
@@ -273,7 +301,7 @@ export default function Empresas() {
 
           {/* Mobile/Tablet Cards */}
           <div className="md:hidden divide-y divide-slate-100">
-            {empresas.map((empresa) => {
+            {paginatedItems.map((empresa) => {
               const grupoNome = grupos.find(g => g.id === empresa.grupo_id)?.nome || 'Desconhecido'
               
               return (
@@ -324,6 +352,14 @@ export default function Empresas() {
               )
             })}
           </div>
+          <Pagination
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
         </div>
       )}
 

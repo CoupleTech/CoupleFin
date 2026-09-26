@@ -21,6 +21,7 @@ import Configuracoes from './pages/Configuracoes'
 import Fechamento from './pages/Fechamento'
 import DRE from './pages/DRE'
 import Relatorios from './pages/Relatorios'
+import { UpdateModal } from './components/ui/UpdateModal'
 
 function App() {
   const [loading, setLoading] = useState(true)
@@ -132,6 +133,7 @@ function App() {
         <Route path="/fechamento" element={user ? <Fechamento /> : <Navigate to="/login" />} />
         <Route path="/configuracoes" element={user ? <Configuracoes /> : <Navigate to="/login" />} />
       </Routes>
+      <UpdateModal />
     </Router>
   )
 }

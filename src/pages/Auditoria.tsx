@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Input, Select, Badge, EmptyState, PageHeader } from '../components/ui'
+import { Input, Select, Badge, EmptyState, PageHeader, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { 
   ShieldCheck, 
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { usePagination } from '../hooks/usePagination'
 
 interface Historico {
   id: string
@@ -79,6 +80,12 @@ export default function Auditoria() {
     return true
   })
 
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(historicosFiltrados)
+
   return (
     <Layout>
       <PageHeader
@@ -139,7 +146,7 @@ export default function Auditoria() {
                 </div>
               ) : (
                 <div className="relative border-l-2 border-slate-100 ml-3 md:ml-4 space-y-8">
-                  {historicosFiltrados.map((hist, idx) => {
+                  {paginatedItems.map((hist, idx) => {
                     const acaoFormatada = getAcaoStyle(hist.acao)
                     const isFirst = idx === 0
                     
@@ -202,6 +209,14 @@ export default function Auditoria() {
                 </div>
               )}
             </div>
+            
+            <Pagination
+              totalItems={totalItems}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+            />
           </div>
         </div>
       )}

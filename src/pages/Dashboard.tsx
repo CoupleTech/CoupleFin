@@ -199,10 +199,10 @@ export default function Dashboard() {
               <p className="text-slate-500">Acompanhe seus principais indicadores em tempo real.</p>
             </div>
             
-            <div className="flex gap-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
               <input 
                 type="month" 
-                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm"
+                className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm w-full sm:w-auto max-w-full"
                 value={mesAno}
                 onChange={e => setMesAno(e.target.value)}
               />

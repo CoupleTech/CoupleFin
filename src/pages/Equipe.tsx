@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle } from '../components/ui'
+import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Users, Edit2, Shield, Check, XCircle, Building } from 'lucide-react'
+import { Users, Edit2, Shield, Check, XCircle, Building, Search } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { usePagination } from '../hooks/usePagination'
 
 interface Usuario {
   id: string
@@ -39,6 +40,20 @@ export default function Equipe() {
     ativo: true,
     empresas_vinculadas: [] as string[]
   })
+
+  const [busca, setBusca] = useState('')
+
+  const usuariosFiltrados = usuarios.filter(u => {
+    if (!busca) return true
+    const search = busca.toLowerCase()
+    return u.nome.toLowerCase().includes(search) || u.email.toLowerCase().includes(search)
+  })
+
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(usuariosFiltrados)
 
   useEffect(() => {
     carregarDados()
@@ -157,7 +172,18 @@ export default function Equipe() {
           description="Você precisa registrar usuários para utilizar o sistema."
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                icon={<Search className="w-4 h-4 text-slate-400" />}
+              />
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left">
@@ -171,7 +197,7 @@ export default function Equipe() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {usuarios.map((user) => (
+                {paginatedItems.map((user) => (
                   <tr key={user.id} className="hover:bg-slate-50/50 transition-colors duration-fast group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -232,7 +258,7 @@ export default function Equipe() {
 
           {/* Mobile/Tablet Cards */}
           <div className="lg:hidden divide-y divide-slate-100">
-            {usuarios.map((user) => (
+            {paginatedItems.map((user) => (
               <div key={user.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -282,6 +308,14 @@ export default function Equipe() {
               </div>
             ))}
           </div>
+          <Pagination
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
         </div>
       )}
 

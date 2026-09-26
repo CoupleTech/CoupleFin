@@ -146,10 +146,10 @@ export default function Relatorios() {
       />
 
       {/* Filtros */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-end no-print">
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end no-print">
         
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Relatório</label>
+        <div className="min-w-0">
+          <label className="block text-sm font-medium text-slate-700 mb-1 truncate">Tipo de Relatório</label>
           <Select 
             value={tipoRelatorio} 
             onChange={e => setTipoRelatorio(e.target.value)}
@@ -161,18 +161,18 @@ export default function Relatorios() {
           />
         </div>
 
-        <div className="flex-1 min-w-[150px]">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Mês/Ano</label>
+        <div className="min-w-0">
+          <label className="block text-sm font-medium text-slate-700 mb-1 truncate">Mês/Ano</label>
           <input 
             type="month" 
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+            className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-lg"
             value={mesAno}
             onChange={e => setMesAno(e.target.value)}
           />
         </div>
 
-        <div className="flex-1 min-w-[150px]">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Visão</label>
+        <div className="min-w-0">
+          <label className="block text-sm font-medium text-slate-700 mb-1 truncate">Visão</label>
           <Select 
             value={visao} 
             onChange={e => setVisao(e.target.value)}
@@ -183,8 +183,8 @@ export default function Relatorios() {
           />
         </div>
 
-        <div className="flex-1 min-w-[150px]">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Empresa</label>
+        <div className="min-w-0">
+          <label className="block text-sm font-medium text-slate-700 mb-1 truncate">Empresa</label>
           <Select 
             value={modo} 
             onChange={e => setModo(e.target.value)}
@@ -195,11 +195,11 @@ export default function Relatorios() {
           />
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={exportarExcel} icon={<Download className="w-4 h-4" />}>
+        <div className="flex gap-2 w-full">
+          <Button variant="secondary" className="flex-1" onClick={exportarExcel} icon={<Download className="w-4 h-4" />}>
             Excel
           </Button>
-          <Button variant="secondary" onClick={imprimir} icon={<Printer className="w-4 h-4" />}>
+          <Button variant="secondary" className="flex-1" onClick={imprimir} icon={<Printer className="w-4 h-4" />}>
             Imprimir
           </Button>
         </div>

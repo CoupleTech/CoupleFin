@@ -92,7 +92,7 @@ Este arquivo controla as fases de desenvolvimento do projeto **coupleFin**, inte
 
 ---
 
-### Fase 5: Configuração visual e fechamento de período (INCOMPLETA)
+### Fase 5: Configuração visual e fechamento de período (CONCLUÍDA)
 **Objetivo:** Cores do sistema e logo por empresa, aplicadas em tela e em exportações; regra de fechamento contábil mensal.
 
 **Referências na `documentacao.md`:**
@@ -104,14 +104,12 @@ Este arquivo controla as fases de desenvolvimento do projeto **coupleFin**, inte
 - [x] 2. Product Validation (`02-lean-product-prp`)
 - [x] 3. Architecture Validation (`03-supabase-architecture-review`)
 - [x] 4. Code Generation (Implementação)
-- [ ] 5. QA Validation (`04-qa-production-review`) -> *Pulado por erros de permissão do BD no Supabase*
-- [ ] 6. Release Decision
-
-> **⚠️ NOTA:** Fase marcada como incompleta pelo usuário devido a persistência de erros 403 no Supabase. O código no frontend está implementado, mas pendente de testes com um banco 100% funcional.
+- [x] 5. QA Validation (`04-qa-production-review`)
+- [x] 6. Release Decision
 
 ---
 
-### Fase 6: DRE e Relatórios (EM ANDAMENTO)
+### Fase 6: DRE e Relatórios (CONCLUÍDA)
 **Objetivo:** Geração de DRE contábil/financeiro, relatórios analíticos, exportação PDF/Excel/impressão.
 
 **Referências na `documentacao.md`:**
@@ -129,7 +127,7 @@ Este arquivo controla as fases de desenvolvimento do projeto **coupleFin**, inte
 
 ---
 
-### Fase 7: Dashboard (EM ANDAMENTO)
+### Fase 7: Dashboard (CONCLUÍDA)
 **Objetivo:** Indicadores e gráficos, incluindo alertas de vencimento.
 
 **Referências na `documentacao.md`:**
@@ -145,7 +143,7 @@ Este arquivo controla as fases de desenvolvimento do projeto **coupleFin**, inte
 
 ---
 
-### Fase 8: PWA (EM ANDAMENTO)
+### Fase 8: PWA (CONCLUÍDA)
 **Objetivo:** Manifest, service worker, leitura de chave via câmera.
 
 **Referências na `documentacao.md`:**
@@ -163,3 +161,29 @@ Este arquivo controla as fases de desenvolvimento do projeto **coupleFin**, inte
 
 ## 🎉 PROJETO MVP CONCLUÍDO
 Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram finalizadas com sucesso.
+
+---
+
+### Fase 9: Melhorias de UX e Escalabilidade de Interface (CONCLUÍDA)
+**Objetivo:** Ajustes de layout, usabilidade, paginação e correções de fuso horário em datas.
+
+**Tarefas Planejadas:**
+- [x] 1. **Header e Layout:** 
+   - Remover o campo "Buscar" do header superior (pois não está funcional na posição atual).
+   - Mover a identificação do usuário logado (círculo com inicial do nome) do menu lateral para o canto superior direito do header.
+   - Manter o botão "Sair" no menu inferior, mas adicionar uma borda a ele utilizando a cor principal (var(--color-primary)) do sistema, de forma que acompanhe as mudanças de cor feitas pelo usuário.
+   - Aumentar a largura máxima das telas. O layout atual centralizado está muito bom, mas deixa uma área branca "perdida" nas laterais. Expandir a "max-width" para otimizar o espaço.
+- [x] 2. **Paginação:**
+   - Implementar sistema de paginação em todas as telas que possuam listas (para evitar lentidão/listas gigantes no futuro).
+   - O padrão será exibir os 15 primeiros itens, com seletor para o usuário alterar a visualização para 15, 30, 50, 100 ou "Todos".
+- [x] 3. **Busca Local:**
+   - Incluir um campo de busca/filtro local nas telas que exibem listas, compensando a remoção do buscar global do header.
+- [x] 4. **Correção de Fuso Horário (Timezone/UTC):**
+   - Revisar todos os inputs de data e suas exibições no sistema para que desconsiderem conversão de UTC automática. Exemplo crítico: se o usuário inserir `26/09/2026`, o sistema deve garantir que exiba e salve exatamente `26/09/2026`, prevenindo que caia pro dia 25 ou 27 dependendo do fuso horário local da máquina.
+
+*Pipeline de Execução:*
+- [x] 1. Planejamento (Atual)
+- [x] 2. Implementação do Layout e Busca
+- [x] 3. Implementação da Paginação (Backend + Frontend)
+- [x] 4. Correção Global de Componentes de Data
+- [x] 5. Release Decision

@@ -8,6 +8,7 @@ import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
 import { isPeriodoFechado } from '../lib/gatekeeper'
 import { Html5QrcodeScanner } from 'html5-qrcode'
+import { format } from 'date-fns'
 
 const tiposLancamento = [
   { value: 'nota_fiscal', label: 'Nota Fiscal' },
@@ -55,7 +56,7 @@ export default function NovoLancamento() {
     subtipo: 'avulso',
     valor: '',
     descricao: '',
-    data_competencia: new Date().toISOString().split('T')[0],
+    data_competencia: format(new Date(), 'yyyy-MM-dd'),
     data_vencimento: '',
     data_pagamento: '',
     ja_pago: false, // helper para UI

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Modal, EmptyState, PageHeader, Badge } from '../components/ui'
+import { Button, Input, Modal, EmptyState, PageHeader, Badge, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, Building2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Building2, Search } from 'lucide-react'
+import { usePagination } from '../hooks/usePagination'
 
 interface Grupo {
   id: string
@@ -19,6 +20,20 @@ export default function Grupos() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({ id: '', nome: '' })
+
+  const [busca, setBusca] = useState('')
+
+  const gruposFiltrados = grupos.filter(g => {
+    if (!busca) return true
+    const search = busca.toLowerCase()
+    return g.nome.toLowerCase().includes(search) || g.id.toLowerCase().includes(search)
+  })
+
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(gruposFiltrados)
 
   useEffect(() => {
     carregarGrupos()
@@ -101,7 +116,18 @@ export default function Grupos() {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar por nome do grupo..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                icon={<Search className="w-4 h-4 text-slate-400" />}
+              />
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left">
@@ -114,7 +140,7 @@ export default function Grupos() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {grupos.map((grupo) => (
+                {paginatedItems.map((grupo) => (
                   <tr key={grupo.id} className="hover:bg-slate-50/50 transition-colors duration-fast group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -157,7 +183,7 @@ export default function Grupos() {
 
           {/* Mobile Cards */}
           <div className="sm:hidden divide-y divide-slate-100">
-            {grupos.map((grupo) => (
+            {paginatedItems.map((grupo) => (
               <div key={grupo.id} className="p-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center text-primary font-bold text-sm shrink-0">
@@ -188,6 +214,14 @@ export default function Grupos() {
               </div>
             ))}
           </div>
+          <Pagination
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
         </div>
       )}
 

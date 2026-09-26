@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Select, Badge, EmptyState, PageHeader, Modal } from '../components/ui'
+import { Button, Input, Select, Badge, EmptyState, PageHeader, Modal, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { 
   Plus, 
@@ -20,6 +20,7 @@ import {
 import { useAppStore } from '../store/useAppStore'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { isPeriodoFechado } from '../lib/gatekeeper'
+import { usePagination } from '../hooks/usePagination'
 
 interface Lancamento {
   id: string
@@ -115,6 +116,13 @@ export default function Financeiro() {
     const forn = (l.fornecedores?.razao_social || '').toLowerCase()
     return desc.includes(search) || forn.includes(search)
   })
+
+  // Hook de paginação
+  const { 
+    currentPage, setCurrentPage, 
+    itemsPerPage, setItemsPerPage, 
+    paginatedItems, totalItems 
+  } = usePagination(lancamentosFiltrados)
 
   // Resumos
   const totalAtrasado = lancamentosFiltrados.filter(l => l.status_pagamento === 'atrasado').reduce((acc, l) => acc + l.valor, 0)
@@ -294,7 +302,7 @@ export default function Financeiro() {
                 icon={<Search className="w-4 h-4 text-slate-400" />}
               />
             </div>
-            <div className="w-full md:w-auto grid grid-cols-2 gap-4">
+            <div className="w-full md:w-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Data Inicial"
                 type="date"
@@ -347,7 +355,7 @@ export default function Financeiro() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {lancamentosFiltrados.map((lanc) => {
+                    {paginatedItems.map((lanc) => {
                       // Define a cor baseada no grupo do dre (entrada vs saída)
                       // No momento assumimos que a maioria é despesa, se for "receita" é positivo
                       const isReceita = lanc.tipo_despesa?.grupo_dre === 'receita'
@@ -442,6 +450,13 @@ export default function Financeiro() {
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                totalItems={totalItems}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
             </div>
           )}
         </div>

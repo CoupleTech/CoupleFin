@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Modal, EmptyState, PageHeader, Badge, Toggle } from '../components/ui'
+import { Button, Input, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, Tags, Check, XCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, Tags, Check, XCircle, Search } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { usePagination } from '../hooks/usePagination'
 
 interface CentroCusto {
   id: string
@@ -29,6 +30,20 @@ export default function CentrosCusto() {
     codigo: '',
     ativo: true
   })
+
+  const [busca, setBusca] = useState('')
+
+  const centrosFiltrados = centros.filter(c => {
+    if (!busca) return true
+    const search = busca.toLowerCase()
+    return c.nome.toLowerCase().includes(search) || (c.codigo || '').toLowerCase().includes(search)
+  })
+
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(centrosFiltrados)
 
   useEffect(() => {
     if (empresaAtivaId) {
@@ -147,7 +162,18 @@ export default function CentrosCusto() {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar por nome ou código..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                icon={<Search className="w-4 h-4 text-slate-400" />}
+              />
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
@@ -160,7 +186,7 @@ export default function CentrosCusto() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {centros.map((centro) => (
+                {paginatedItems.map((centro) => (
                   <tr key={centro.id} className="hover:bg-slate-50/50 transition-colors duration-fast group">
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-slate-800">{centro.nome}</span>
@@ -212,7 +238,7 @@ export default function CentrosCusto() {
 
           {/* Mobile/Tablet Cards */}
           <div className="md:hidden divide-y divide-slate-100">
-            {centros.map((centro) => (
+            {paginatedItems.map((centro) => (
               <div key={centro.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -247,6 +273,14 @@ export default function CentrosCusto() {
               </div>
             ))}
           </div>
+          <Pagination
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
         </div>
       )}
 

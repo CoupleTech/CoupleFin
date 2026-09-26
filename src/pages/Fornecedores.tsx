@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Input, Modal, EmptyState, PageHeader, Badge, Toggle } from '../components/ui'
+import { Button, Input, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, Store, Check, XCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, Store, Check, XCircle, Search } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { usePagination } from '../hooks/usePagination'
 
 interface Fornecedor {
   id: string
@@ -39,6 +40,22 @@ export default function Fornecedores() {
     endereco: '',
     ativo: true
   })
+
+  const [busca, setBusca] = useState('')
+
+  const fornecedoresFiltrados = fornecedores.filter(f => {
+    if (!busca) return true
+    const search = busca.toLowerCase()
+    return f.razao_social.toLowerCase().includes(search) || 
+           (f.cnpj_cpf || '').includes(search) || 
+           (f.email || '').toLowerCase().includes(search)
+  })
+
+  const {
+    currentPage, setCurrentPage,
+    itemsPerPage, setItemsPerPage,
+    paginatedItems, totalItems
+  } = usePagination(fornecedoresFiltrados)
 
   useEffect(() => {
     if (grupo_id) {
@@ -176,7 +193,18 @@ export default function Fornecedores() {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <Input
+                placeholder="Buscar por razão social, CNPJ/CPF ou email..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                icon={<Search className="w-4 h-4 text-slate-400" />}
+              />
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {/* Desktop Table */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left">
@@ -190,7 +218,7 @@ export default function Fornecedores() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {fornecedores.map((fornecedor) => (
+                {paginatedItems.map((fornecedor) => (
                   <tr key={fornecedor.id} className="hover:bg-slate-50/50 transition-colors duration-fast group">
                     <td className="px-6 py-4">
                       <span className="text-sm font-medium text-slate-800">{fornecedor.razao_social}</span>
@@ -241,7 +269,7 @@ export default function Fornecedores() {
 
           {/* Mobile/Tablet Cards */}
           <div className="lg:hidden divide-y divide-slate-100">
-            {fornecedores.map((fornecedor) => (
+            {paginatedItems.map((fornecedor) => (
               <div key={fornecedor.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -284,6 +312,14 @@ export default function Fornecedores() {
               </div>
             ))}
           </div>
+          <Pagination
+            totalItems={totalItems}
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </div>
         </div>
       )}
 
