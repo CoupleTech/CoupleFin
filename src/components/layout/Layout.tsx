@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState, useCallback } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore'
 import { supabase } from '../../lib/supabase'
@@ -13,8 +13,6 @@ import {
   Search,
   Bell,
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   ChevronDown,
   ChevronRight,
   ChevronLeft,

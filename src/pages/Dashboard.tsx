@@ -3,7 +3,7 @@ import Layout from '../components/layout/Layout'
 import { Card, EmptyState, Select } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { useAppStore } from '../store/useAppStore'
-import { BarChart3, TrendingDown, TrendingUp, Building, CalendarClock, AlertTriangle } from 'lucide-react'
+import { TrendingDown, TrendingUp, Building, CalendarClock, AlertTriangle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { format, startOfMonth, endOfMonth, parseISO, addDays, isBefore, startOfDay, isAfter } from 'date-fns'
 import {
@@ -276,7 +276,7 @@ export default function Dashboard() {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                         <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
                         <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(value) => `R$ ${value}`} />
-                        <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
+                        <RechartsTooltip formatter={(value: any) => formatCurrency(Number(value))} />
                         <Area type="monotone" dataKey="valor" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorValor)" />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -298,11 +298,11 @@ export default function Dashboard() {
                             paddingAngle={5}
                             dataKey="value"
                           >
-                            {distCentroCusto.map((entry, index) => (
+                            {distCentroCusto.map((_, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
+                          <RechartsTooltip formatter={(value: any) => formatCurrency(Number(value))} />
                           <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontSize: '12px'}}/>
                         </PieChart>
                       </ResponsiveContainer>
@@ -321,7 +321,7 @@ export default function Dashboard() {
                           <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
                           <BarXAxis type="number" hide />
                           <BarYAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12}} />
-                          <RechartsTooltip formatter={(value: number) => formatCurrency(value)} cursor={{fill: '#f1f5f9'}} />
+                          <RechartsTooltip formatter={(value: any) => formatCurrency(Number(value))} cursor={{fill: '#f1f5f9'}} />
                           <Bar dataKey="value" fill="#0ea5e9" radius={[0, 4, 4, 0]} barSize={24} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -342,7 +342,7 @@ export default function Dashboard() {
                           <BarChart data={distEmpresas} layout="horizontal">
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                             <BarXAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 12}} dy={10} />
-                            <RechartsTooltip formatter={(value: number) => formatCurrency(value)} cursor={{fill: '#f1f5f9'}} />
+                            <RechartsTooltip formatter={(value: any) => formatCurrency(Number(value))} cursor={{fill: '#f1f5f9'}} />
                             <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={40} />
                           </BarChart>
                         </ResponsiveContainer>

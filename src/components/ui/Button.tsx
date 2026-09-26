@@ -24,10 +24,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: React.ReactNode
   iconRight?: React.ReactNode
   loading?: boolean
+  fullWidth?: boolean
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', icon, iconRight, loading, children, className = '', disabled, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', icon, iconRight, loading, fullWidth, children, className = '', disabled, ...props }, ref) => {
     return (
       <button
         ref={ref}
@@ -39,6 +40,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           cursor-pointer
           ${variants[variant]}
           ${sizes[size]}
+          ${fullWidth ? 'w-full' : ''}
           ${className}
         `}
         {...props}

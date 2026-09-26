@@ -402,7 +402,7 @@ export default function Empresas() {
               <div className="flex-1">
                 <label className="text-sm font-medium text-slate-700 block mb-1">Logo da Empresa</label>
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}>
+                  <Button type="button" variant="secondary" size="sm" onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}>
                     Escolher Imagem
                   </Button>
                   <span className="text-xs text-slate-500 max-w-[120px] truncate">

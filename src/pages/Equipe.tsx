@@ -13,7 +13,7 @@ interface Usuario {
   perfil_id: string | null
   ativo: boolean
   perfis_usuario?: { nome: string }
-  usuarios_empresas?: { empresa_id: string; empresas?: { nome_fantasia: string } }[]
+  usuarios_empresas?: { empresa_id: string; empresas?: { nome_fantasia: string; razao_social?: string } }[]
 }
 
 interface Perfil {
@@ -21,10 +21,7 @@ interface Perfil {
   nome: string
 }
 
-interface Empresa {
-  id: string
-  nome_fantasia: string
-}
+
 
 export default function Equipe() {
   const { empresas: todasEmpresas } = useAppStore()
@@ -144,7 +141,7 @@ export default function Equipe() {
           <Button 
             onClick={() => alert("Para adicionar novos usuários com segurança, o administrador deve enviar um convite via backend (Supabase Admin Auth). Esta função será integrada na fase de PWA/Finalização.")} 
             icon={<Shield className="w-4 h-4" />}
-            variant="outline"
+            variant="secondary"
           >
             Convidar Usuário
           </Button>
@@ -198,7 +195,7 @@ export default function Equipe() {
                       <div className="flex flex-wrap gap-1">
                         {user.usuarios_empresas && user.usuarios_empresas.length > 0 ? (
                           user.usuarios_empresas.map(v => (
-                            <Badge key={v.empresa_id} variant="brand" className="!bg-primary/5 !text-primary !border-primary/10">
+                            <Badge key={v.empresa_id} variant="primary" className="!bg-primary/5 !text-primary !border-primary/10">
                               {v.empresas?.nome_fantasia || v.empresas?.razao_social}
                             </Badge>
                           ))
@@ -274,7 +271,7 @@ export default function Equipe() {
                 <div className="mt-2 pl-13 flex flex-wrap gap-1">
                    {user.usuarios_empresas && user.usuarios_empresas.length > 0 ? (
                       user.usuarios_empresas.map(v => (
-                        <Badge key={v.empresa_id} variant="brand" className="!bg-primary/5 !text-primary !border-primary/10 text-[10px]">
+                        <Badge key={v.empresa_id} variant="primary" className="!bg-primary/5 !text-primary !border-primary/10 text-[10px]">
                           {v.empresas?.nome_fantasia || v.empresas?.razao_social}
                         </Badge>
                       ))

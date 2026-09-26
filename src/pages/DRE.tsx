@@ -4,7 +4,7 @@ import Layout from '../components/layout/Layout'
 import { PageHeader, Select, Button, EmptyState } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { useAppStore } from '../store/useAppStore'
-import { Calculator, Download, Printer, Filter } from 'lucide-react'
+import { Calculator, Download, Printer } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import * as XLSX from 'xlsx'
 
@@ -196,10 +196,10 @@ export default function DRE() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportarExcel} icon={<Download className="w-4 h-4" />}>
+          <Button variant="secondary" onClick={exportarExcel} icon={<Download className="w-4 h-4" />}>
             Excel
           </Button>
-          <Button variant="outline" onClick={imprimir} icon={<Printer className="w-4 h-4" />}>
+          <Button variant="secondary" onClick={imprimir} icon={<Printer className="w-4 h-4" />}>
             Imprimir
           </Button>
         </div>

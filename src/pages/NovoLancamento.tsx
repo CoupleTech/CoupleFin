@@ -132,7 +132,7 @@ export default function NovoLancamento() {
           scanner.clear()
           setIsScanning(false)
         },
-        (error) => {
+        () => {
           // ignore error
         }
       )
@@ -314,7 +314,7 @@ export default function NovoLancamento() {
                       />
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => setIsScanning(!isScanning)}
                         icon={<Camera className="w-5 h-5" />}
                         title="Ler Código de Barras / QR"
@@ -564,7 +564,7 @@ export default function NovoLancamento() {
           <div className="flex gap-4 justify-end pt-4">
             <Button 
               type="button" 
-              variant="outline" 
+              variant="secondary" 
               size="lg"
               onClick={() => navigate('/financeiro')}
             >

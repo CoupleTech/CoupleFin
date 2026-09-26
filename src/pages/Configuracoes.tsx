@@ -3,12 +3,11 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, PageHeader, EmptyState } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Settings, Image as ImageIcon, Save, Palette } from 'lucide-react'
+import { Settings, Save, Palette } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
-import imageCompression from 'browser-image-compression'
 
 export default function Configuracoes() {
-  const { user, setUser, empresaAtivaId, empresas, setEmpresas } = useAppStore()
+  const { user, setUser, empresaAtivaId, empresas } = useAppStore()
   const grupo_id = empresas.length > 0 ? empresas[0].grupo_id : null
 
   const [loading, setLoading] = useState(true)
@@ -46,7 +45,7 @@ export default function Configuracoes() {
     }
 
     // 2. Carregar cores do grupo
-    const { data: config, error: configError } = await supabase
+    const { data: config } = await supabase
       .from('configuracoes_sistema')
       .select('*')
       .eq('grupo_id', grupo_id)

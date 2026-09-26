@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, Modal, EmptyState, PageHeader, Badge } from '../components/ui'
-import { PageLoading, TableRowSkeleton } from '../components/ui/LoadingSpinner'
+import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Plus, Edit2, Trash2, Building2 } from 'lucide-react'
 
 interface Grupo {

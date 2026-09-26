@@ -3,9 +3,9 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Select, Badge, EmptyState, PageHeader } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Lock, Unlock, Calendar, ShieldAlert } from 'lucide-react'
+import { Lock, Unlock, Calendar } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
-import { format, startOfMonth, parse } from 'date-fns'
+import { format, parse } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 interface Periodo {
@@ -202,7 +202,7 @@ export default function Fechamento() {
                     </div>
                     
                     <Button
-                      variant={isFechado ? "outline" : "solid"}
+                      variant={isFechado ? "secondary" : "primary"}
                       className={!isFechado ? "!bg-slate-800 hover:!bg-slate-900" : ""}
                       icon={isFechado ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                       onClick={() => handleTogglePeriodo(periodo)}

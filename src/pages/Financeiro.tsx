@@ -7,7 +7,6 @@ import { PageLoading } from '../components/ui/LoadingSpinner'
 import { 
   Plus, 
   Search, 
-  Filter, 
   ArrowUpRight, 
   ArrowDownRight,
   WalletCards,
