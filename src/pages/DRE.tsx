@@ -165,7 +165,7 @@ export default function DRE() {
           <label className="block text-sm font-medium text-slate-700 mb-1 truncate">Mês/Ano</label>
           <input 
             type="month" 
-            className="w-full max-w-full min-w-[140px] sm:min-w-[160px] appearance-none bg-white px-3 py-2 border border-slate-300 rounded-lg"
+            className="w-full max-w-full min-w-[140px] sm:min-w-[180px] appearance-none bg-white px-3 py-2 border border-slate-300 rounded-lg"
             value={mesAno}
             onChange={e => setMesAno(e.target.value)}
           />
