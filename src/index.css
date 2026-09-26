@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════
+   COUPLEFIN — DESIGN TOKENS
+   Base visual global do sistema.
+   Todas as telas herdam estes tokens via Tailwind + CSS vars.
+   Referência: skills/_5ui-design-system, _3dashboard-layout
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Cores Core (ui-design-system §2.4 — máx 3 cores) ── */
+  --color-primary: #f97316;       /* Laranja — ações, brand, CTAs */
+  --color-secondary: #1e293b;     /* Slate 800 — estrutura, sidebar, textos fortes */
+  --color-accent: #10b981;        /* Emerald — sucesso, confirmações, highlights */
+
+  /* ── Superfícies ── */
+  --color-surface: #ffffff;
+  --color-surface-hover: #f8fafc;
+  --color-surface-active: #f1f5f9;
+  --color-bg: #f8f9fb;
+  --color-bg-elevated: #ffffff;
+
+  /* ── Bordas ── */
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+  --color-border-strong: #cbd5e1;
+
+  /* ── Texto ── */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  /* ── Feedback / Status ── */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+
+  /* ── Sombras (ui-design-system §2.3 — apenas neutras) ── */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+  /* ── Border Radius (ui-design-system §2.2) ── */
+  --radius-sm: 0.375rem;   /* 6px  — rounded-md — default para inputs */
+  --radius-md: 0.5rem;     /* 8px  — rounded-lg — cards, containers */
+  --radius-lg: 0.75rem;    /* 12px — rounded-xl — modais, destaque */
+  --radius-xl: 1rem;       /* 16px — rounded-2xl — cards featured */
+  --radius-full: 9999px;   /* avatares, badges circulares */
+
+  /* ── Espaçamento ── */
+  --space-page: 2rem;
+  --space-section: 1.5rem;
+  --space-card: 1.5rem;
+
+  /* ── Transições (ui-design-system §5 — 150-200ms) ── */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* ── Sidebar (dashboard-layout §1.1) ── */
+  --sidebar-width: 16rem;
+  --sidebar-width-collapsed: 4.5rem;
+
+  /* ── Z-Index Scale ── */
+  --z-sidebar: 40;
+  --z-header: 30;
+  --z-overlay: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+}
+
+/* ── Base Layer ── */
+@layer base {
+  body {
+    @apply bg-[var(--color-bg)] text-[var(--color-text-primary)] antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Scrollbar sutil */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Focus ring global — acessibilidade */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+
+  /* Selection */
+  ::selection {
+    background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
+}
+
+/* ── Components Layer ── */
+@layer components {
+  /* Animação de entrada de modal */
+  .modal-enter {
+    animation: modalIn var(--transition-slow) ease forwards;
+  }
+  .modal-exit {
+    animation: modalOut var(--transition-base) ease forwards;
+  }
+
+  /* Overlay do modal */
+  .overlay-enter {
+    animation: overlayIn var(--transition-base) ease forwards;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply bg-slate-200 rounded-md animate-pulse;
+  }
+
+  /* Card padrão */
+  .card {
+    @apply bg-white rounded-xl border border-slate-100;
+    box-shadow: var(--shadow-sm);
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* ── Keyframes ── */
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideOutLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
