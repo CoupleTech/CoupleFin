@@ -27,6 +27,7 @@ import {
   Calculator,
   FileBarChart
 } from 'lucide-react'
+import { NotificationDropdown } from '../ui/NotificationDropdown'
 
 interface LayoutProps {
   children: ReactNode
@@ -414,16 +415,7 @@ export default function Layout({ children }: LayoutProps) {
             )}
 
             {/* Notifications */}
-            <button className="
-              w-9 h-9 sm:w-10 sm:h-10 
-              bg-slate-50 border border-slate-200 rounded-lg 
-              flex items-center justify-center text-slate-500 
-              hover:text-primary hover:border-primary/30 hover:bg-primary/5
-              transition-all duration-fast relative
-            ">
-              <Bell className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-2 h-2 bg-danger rounded-full border-2 border-white" />
-            </button>
+            <NotificationDropdown />
 
             {/* User Info no Header */}
             <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 ml-1 sm:ml-2 border-l border-slate-200">

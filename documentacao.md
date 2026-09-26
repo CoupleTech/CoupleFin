@@ -238,6 +238,14 @@ exigência básica de compliance/auditoria):
   completa (ver seção 5.6).
 - Tela de consulta ao histórico (visível ao menos para perfis Administrador/Financeiro).
 
+### 4.14 Notificações e Web Push **[COMPLEMENTO]**
+Para manter os usuários engajados e avisados sobre ações urgentes:
+- **Painel In-App**: um ícone de sino no header superior exibindo uma lista suspensa (dropdown) das notificações mais recentes.
+- **Tipos de Notificações**:
+  - Alertas de vencimento (contas vencendo hoje ou atrasadas).
+  - Avisos do sistema (atualizações, novos recursos).
+- **Web Push (PWA)**: usando a `Push API` e `Service Worker`, os usuários do PWA podem se inscrever para receber as mesmas notificações como alertas nativos no celular/desktop, mesmo quando o app está fechado.
+
 ---
 
 ## 5. Modelo de Dados (sugestão de schema — Postgres/Supabase)

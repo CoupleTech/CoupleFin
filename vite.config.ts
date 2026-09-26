@@ -7,6 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
+      injectRegister: 'auto',
       includeAssets: ['icon-192.svg', 'icon-512.svg'],
       manifest: {
         name: 'CoupleFin',
@@ -27,6 +28,12 @@ export default defineConfig({
             type: 'image/svg+xml'
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        cleanupOutdatedCaches: true,
+        navigateFallback: '/index.html',
+        importScripts: ['custom-sw.js']
       }
     })
   ],

@@ -173,6 +173,27 @@ CREATE TABLE historico_alteracoes (
   acao text NOT NULL CHECK (acao IN ('criacao', 'edicao', 'estorno', 'reabertura_periodo')),
   created_at timestamptz DEFAULT now()
 );
+
+-- Notificações in-app e Web Push
+CREATE TABLE notificacoes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id uuid REFERENCES usuarios(id) ON DELETE CASCADE,
+  titulo text NOT NULL,
+  mensagem text NOT NULL,
+  tipo text DEFAULT 'sistema',
+  lida boolean DEFAULT false,
+  link_acao text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id uuid REFERENCES usuarios(id) ON DELETE CASCADE,
+  endpoint text NOT NULL UNIQUE,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
 ```
 
 ## 2. Row Level Security (RLS) - Fase 1 (FundaÃ§Ã£o)

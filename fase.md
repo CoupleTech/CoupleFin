@@ -187,3 +187,27 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 - [x] 3. Implementação da Paginação (Backend + Frontend)
 - [x] 4. Correção Global de Componentes de Data
 - [x] 5. Release Decision
+
+---
+
+### Fase 10: Notificações e Web Push (PENDENTE)
+**Objetivo:** Fazer o ícone do "Sino" funcionar com um painel de notificações in-app e implementar Web Push para avisos no celular via PWA.
+
+**Tarefas Planejadas:**
+- [x] 1. **Revisão do PWA:**
+   - Diagnosticar e corrigir por que a atualização via Modal PWA não funcionou corretamente no mobile/desktop.
+- [x] 2. **Modelagem de Dados (Notificações):**
+   - Criar tabela `notificacoes` para histórico in-app (lidas/não lidas).
+   - Criar tabela `push_subscriptions` para guardar inscrições de notificação push dos navegadores.
+- [x] 3. **Interface do Sino:**
+   - Criar um Dropdown no ícone do sino (`Bell`) no `Layout.tsx` para listar as últimas notificações, marcar como lida e redirecionar para links.
+- [~] 4. **Motor de Web Push (Parcialmente Concluído):**
+   - [x] Implementar assinatura de Push API no Service Worker.
+   - [ ] Criar gatilhos e enviar notificações (Backend / Supabase Edge Functions pendentes).
+
+*Pipeline de Execução:*
+- [x] 1. Planejamento na documentação e banco de dados.
+- [x] 2. Criação das tabelas no Supabase.
+- [x] 3. Criação da UI (Dropdown de Notificações).
+- [~] 4. Integração do Web Push (Frontend OK + Backend Pendente).
+- [ ] 5. Testes e Release.
