@@ -11,6 +11,13 @@ export function UpdateModal() {
   } = useRegisterSW({
     onRegistered(r: any) {
       console.log('SW Registered', r)
+      if (r) {
+        // Checar por nova versão a cada 60 segundos
+        setInterval(() => {
+          console.log('Checando atualização do PWA...')
+          r.update()
+        }, 60 * 1000)
+      }
     },
     onRegisterError(error: any) {
       console.log('SW registration error', error)
