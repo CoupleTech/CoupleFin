@@ -13,11 +13,11 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || label?.toLowerCase().replace(/\s+/g, '-')
 
     return (
-      <div className="w-full">
+      <div className="w-full min-w-0">
         {label && (
           <label
             htmlFor={selectId}
-            className="block text-sm font-medium text-slate-700 mb-1.5"
+            className="block text-sm font-medium text-slate-700 mb-1.5 truncate"
           >
             {label}
           </label>
