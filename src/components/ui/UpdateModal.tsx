@@ -1,7 +1,7 @@
-import React from 'react'
 import Modal from './Modal'
 import Button from './Button'
 import { RefreshCw } from 'lucide-react'
+// @ts-ignore
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 export function UpdateModal() {
@@ -9,10 +9,10 @@ export function UpdateModal() {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegistered(r) {
+    onRegistered(r: any) {
       console.log('SW Registered', r)
     },
-    onRegisterError(error) {
+    onRegisterError(error: any) {
       console.log('SW registration error', error)
     },
   })
