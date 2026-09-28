@@ -21,6 +21,7 @@ import Configuracoes from './pages/Configuracoes'
 import Fechamento from './pages/Fechamento'
 import DRE from './pages/DRE'
 import Relatorios from './pages/Relatorios'
+import AceitarConvite from './pages/AceitarConvite'
 import { UpdateModal } from './components/ui/UpdateModal'
 import { ToastContainer } from './components/ui/ToastContainer'
 
@@ -116,6 +117,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+        <Route path="/aceitar-convite" element={<AceitarConvite />} />
         <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
         <Route path="/grupos" element={user ? <Grupos /> : <Navigate to="/login" />} />
         <Route path="/empresas" element={user ? <Empresas /> : <Navigate to="/login" />} />

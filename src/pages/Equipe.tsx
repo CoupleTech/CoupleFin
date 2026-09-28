@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Users, Edit2, Shield, Check, XCircle, Building, Search } from 'lucide-react'
+import { Users, Edit2, Shield, Check, XCircle, Building, Search, Copy, CheckCircle } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { usePagination } from '../hooks/usePagination'
 import { toast } from '../store/useToastStore'
@@ -26,7 +26,7 @@ interface Perfil {
 
 
 export default function Equipe() {
-  const { empresas: todasEmpresas } = useAppStore()
+  const { empresas: todasEmpresas, empresaAtivaId, user } = useAppStore()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [perfis, setPerfis] = useState<Perfil[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,6 +41,13 @@ export default function Equipe() {
     ativo: true,
     empresas_vinculadas: [] as string[]
   })
+
+  // Invite Modal States
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [invitePerfilId, setInvitePerfilId] = useState('')
+  const [generatedLink, setGeneratedLink] = useState('')
+  const [isCopied, setIsCopied] = useState(false)
 
   const [busca, setBusca] = useState('')
 
@@ -143,6 +150,52 @@ export default function Equipe() {
     carregarDados()
   }
 
+  const openInviteModal = () => {
+    setInviteEmail('')
+    setInvitePerfilId('')
+    setGeneratedLink('')
+    setIsCopied(false)
+    setIsInviteModalOpen(true)
+  }
+
+  const handleGerarConvite = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!empresaAtivaId || !user) return
+
+    setIsSubmitting(true)
+    
+    // Insere na tabela convites_equipe
+    const { data, error } = await supabase
+      .from('convites_equipe')
+      .insert({
+        empresa_id: empresaAtivaId,
+        email: inviteEmail,
+        perfil_id: invitePerfilId,
+        criado_por: user.id
+      })
+      .select('token')
+      .single()
+
+    if (error) {
+      console.error(error)
+      toast.error('Erro ao gerar convite.')
+      setIsSubmitting(false)
+      return
+    }
+
+    const link = `${window.location.origin}/aceitar-convite?token=${data.token}`
+    setGeneratedLink(link)
+    setIsSubmitting(false)
+    toast.success('Convite gerado com sucesso!')
+  }
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedLink)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000)
+    toast.success('Link copiado!')
+  }
+
   const perfisOptions = [
     { value: '', label: 'Sem Perfil (Acesso Restrito)' },
     ...perfis.map(p => ({ value: p.id, label: p.nome }))
@@ -156,9 +209,9 @@ export default function Equipe() {
           subtitle="Gerencie os acessos, perfis e vínculos das pessoas no sistema."
           action={
             <Button 
-              onClick={() => toast.info("Para adicionar novos usuários com segurança, o administrador deve enviar um convite via backend. Esta função será integrada na fase de Finalização.")} 
+              onClick={openInviteModal} 
               icon={<Shield className="w-4 h-4" />}
-              variant="secondary"
+              variant="primary"
             >
               Convidar Usuário
             </Button>
@@ -406,6 +459,81 @@ export default function Equipe() {
           </div>
         </form>
       </Modal>
+
+      {/* Modal Convidar Usuário */}
+      <Modal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        title="Convidar Novo Usuário"
+        subtitle="Gere um link de convite seguro para sua equipe."
+        icon={<Shield className="w-5 h-5" />}
+        size="md"
+      >
+        {!generatedLink ? (
+          <form onSubmit={handleGerarConvite}>
+            <div className="space-y-4 mb-6">
+              <Input
+                label="E-mail do Convidado"
+                type="email"
+                placeholder="exemplo@email.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                required
+              />
+              <Select
+                label="Perfil de Acesso"
+                value={invitePerfilId}
+                onChange={(e) => setInvitePerfilId(e.target.value)}
+                options={perfisOptions.filter(p => p.value !== '')}
+                required
+              />
+              <p className="text-sm text-slate-500 bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100">
+                O usuário convidado será vinculado automaticamente à empresa atual.
+              </p>
+            </div>
+            <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+              <Button variant="ghost" type="button" onClick={() => setIsInviteModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" loading={isSubmitting}>
+                Gerar Link de Convite
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-6 mb-2">
+            <div className="p-4 bg-green-50 border border-green-100 rounded-xl text-center">
+              <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+              <h3 className="font-semibold text-green-800">Convite Gerado!</h3>
+              <p className="text-sm text-green-600 mt-1">Copie o link abaixo e envie para o convidado.</p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Input 
+                label=""
+                value={generatedLink}
+                readOnly
+                className="flex-1 bg-slate-50"
+              />
+              <Button 
+                type="button"
+                variant={isCopied ? "success" : "primary"}
+                onClick={copyToClipboard}
+                icon={isCopied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              >
+                {isCopied ? 'Copiado' : 'Copiar'}
+              </Button>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <Button variant="ghost" onClick={() => setIsInviteModalOpen(false)}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       </div>
     </Layout>
   )

@@ -194,6 +194,18 @@ CREATE TABLE push_subscriptions (
   auth text NOT NULL,
   created_at timestamptz DEFAULT now()
 );
+
+-- Convites de Equipe
+CREATE TABLE convites_equipe (
+  id uuid default uuid_generate_v4() primary key,
+  empresa_id uuid references empresas(id) not null,
+  email text not null,
+  perfil_id uuid references perfis_usuario(id) not null,
+  token uuid default uuid_generate_v4() not null unique,
+  status text default 'pendente' check (status in ('pendente', 'aceito', 'expirado')),
+  criado_por uuid references auth.users(id),
+  criado_em timestamp with time zone default now()
+);
 ```
 
 ## 2. Row Level Security (RLS) - Fase 1 (FundaÃ§Ã£o)
@@ -203,6 +215,7 @@ Como exigido pelo **BaaS Security Constitution**, todas as tabelas devem ter o R
 ```sql
 -- 2.1 Habilitar RLS nas Tabelas Base
 ALTER TABLE grupos_economicos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE convites_equipe ENABLE ROW LEVEL SECURITY;
 ALTER TABLE empresas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE perfis_usuario ENABLE ROW LEVEL SECURITY;
 ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
@@ -239,6 +252,15 @@ CREATE POLICY "Ler prÃ³prio perfil" ON usuarios
 -- Todos os usuÃ¡rios logados podem ler a lista de perfis disponÃ­veis.
 CREATE POLICY "Ler perfis de usuÃ¡rio" ON perfis_usuario
   FOR SELECT USING (auth.role() = 'authenticated');
+
+-- 2.7 PolÃ­ticas: convites_equipe
+-- Admin pode ver e gerenciar convites da sua empresa
+CREATE POLICY "Gerenciar convites da prÃ³pria empresa" ON convites_equipe
+  FOR ALL USING (
+    empresa_id IN (
+      SELECT empresa_id FROM usuarios_empresas WHERE usuario_id = auth.uid()
+    )
+  );
 ```
 
 ## 3. FunÃ§Ãµes e Procedures (RPC) - Fase 1
@@ -280,6 +302,41 @@ BEGIN
   RETURN json_build_object('grupo_id', v_grupo_id, 'empresa_id', v_empresa_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION aceitar_convite_usuario(p_token uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_convite record;
+  v_user_id uuid;
+BEGIN
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Usuário não autenticado';
+  END IF;
+
+  -- Busca convite
+  SELECT * INTO v_convite FROM public.convites_equipe WHERE token = p_token AND status = 'pendente';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Convite inválido ou já utilizado.';
+  END IF;
+
+  -- Atualiza o perfil_id no usuário
+  UPDATE public.usuarios SET perfil_id = v_convite.perfil_id WHERE id = v_user_id;
+
+  -- Vincula à empresa
+  INSERT INTO public.usuarios_empresas (usuario_id, empresa_id)
+  VALUES (v_user_id, v_convite.empresa_id)
+  ON CONFLICT DO NOTHING;
+
+  -- Atualiza o status do convite
+  UPDATE public.convites_equipe SET status = 'aceito' WHERE id = v_convite.id;
+
+  RETURN jsonb_build_object('sucesso', true, 'empresa_id', v_convite.empresa_id);
+END;
+$$;
 ```
 
 
