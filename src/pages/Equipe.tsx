@@ -31,7 +31,7 @@ interface Grupo {
 
 
 export default function Equipe() {
-  const { empresas: todasEmpresas, empresaAtivaId, user } = useAppStore()
+  const { user } = useAppStore()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [perfis, setPerfis] = useState<Perfil[]>([])
   const [grupos, setGrupos] = useState<Grupo[]>([])
