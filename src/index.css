@@ -186,3 +186,46 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Print Media Queries ── */
+@media print {
+  /* Ocultar elementos da interface que não devem ser impressos */
+  aside, header, .no-print {
+    display: none !important;
+  }
+  
+  /* Resetar o layout para ocupar toda a página */
+  body, html, main, #root {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  main {
+    margin-left: 0 !important;
+  }
+
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:flex {
+    display: flex !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

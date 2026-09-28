@@ -10,6 +10,7 @@ import * as XLSX from 'xlsx'
 
 export default function Relatorios() {
   const { empresaAtivaId, empresas } = useAppStore()
+  const empresaAtiva = empresas.find(e => e.id === empresaAtivaId)
   const [loading, setLoading] = useState(false)
   
   const [tipoRelatorio, setTipoRelatorio] = useState('centro_custo') // centro_custo, fornecedor, conta
@@ -213,9 +214,19 @@ export default function Relatorios() {
          <EmptyState icon={<Filter className="w-12 h-12 text-slate-300" />} title="Nenhum dado encontrado" description="Tente alterar os filtros de período ou visão." />
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden print-area">
-          <div className="p-6 border-b border-slate-200 hidden print:block">
-            <h2 className="text-2xl font-bold text-slate-800">{getTitulo()}</h2>
-            <p className="text-slate-500">Período: {mesAno} | Visão: {visao} | Modo: {modo}</p>
+          <div className="p-6 border-b border-slate-200 hidden print:flex items-center gap-6">
+            {empresaAtiva?.logo_url ? (
+              <img src={empresaAtiva.logo_url} alt="Logo da Empresa" className="h-16 w-auto object-contain" />
+            ) : (
+              <div className="w-16 h-16 bg-slate-100 flex items-center justify-center rounded-lg text-slate-400 font-bold text-xl border border-slate-200">
+                {empresaAtiva?.nome_fantasia?.charAt(0) || empresaAtiva?.razao_social?.charAt(0) || 'E'}
+              </div>
+            )}
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800">{getTitulo()}</h2>
+              <p className="text-slate-600 font-medium">{empresaAtiva?.razao_social} {empresaAtiva?.cnpj ? `- CNPJ: ${empresaAtiva.cnpj}` : ''}</p>
+              <p className="text-slate-500 text-sm mt-1">Período: {mesAno} | Visão: {visao === 'contabil' ? 'Contábil' : 'Financeiro'} | Modo: {modo === 'empresa' ? 'Empresa' : 'Consolidado'}</p>
+            </div>
           </div>
           <table className="w-full text-left text-sm text-slate-700">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
