@@ -1,21 +1,23 @@
--- Script para limpar dados de teste do banco de dados (Reset para Produção)
--- Este script APAGA OS DADOS DOS MÓDULOS DE LANÇAMENTOS E CADASTROS, 
--- mas MANTÉM OS CONVITES, EMPRESAS, GRUPOS ECONÔMICOS, USUÁRIOS E PERFIS.
+-- Script para limpar dados de teste do banco de dados (Reset Total para Produção)
+-- Este script APAGA TUDO referente às empresas e grupos de teste, incluindo convites, configurações e lançamentos.
+-- Serão mantidos APENAS os registros de "usuarios", "perfis_usuario" e "auth.users".
 
-TRUNCATE TABLE 
-  public.historico_alteracoes,
-  public.lancamento_anexos,
-  public.lancamentos,
-  public.centro_custo,
-  public.tipo_despesa,
-  public.contas,
-  public.destinos_pagamento,
-  public.fornecedores,
-  public.periodos_fechamento
-CASCADE;
+-- O comando abaixo, devido ao CASCADE, apagará automaticamente os registros das tabelas:
+-- - empresas
+-- - configuracoes_sistema
+-- - centro_custo
+-- - tipo_despesa
+-- - contas
+-- - destinos_pagamento
+-- - fornecedores
+-- - periodos_fechamento
+-- - lancamentos (e anexos)
+-- - convites_equipe (Apaga os convites pois as empresas deixam de existir)
+-- - usuarios_empresas (Apaga os vínculos dos usuários atuais com as antigas empresas teste)
+TRUNCATE TABLE public.grupos_economicos CASCADE;
 
--- Com o comando acima:
--- A estrutura base da conta (Grupos, Empresas, Configurações de Cor) é preservada.
--- Todos os usuários, perfis e seus vínculos de empresa são preservados.
--- Os Convites pendentes ou aceitos (convites_equipe) continuam funcionando normalmente.
--- Apenas os dados financeiros, movimentações e cadastros secundários (contas bancárias, fornecedores, categorias, etc) são apagados, entregando um sistema "em branco" para os donos operarem.
+-- Esvaziamos também o histórico de alterações para não deixar lixo para trás
+TRUNCATE TABLE public.historico_alteracoes CASCADE;
+
+-- Obs: Após rodar este script, os usuários atuais que fizerem login precisarão
+-- criar uma nova empresa (passar pelo onboarding) pois não estarão vinculados a nenhuma empresa ativa.
