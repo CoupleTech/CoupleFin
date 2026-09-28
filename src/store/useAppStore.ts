@@ -14,6 +14,7 @@ interface Empresa {
   razao_social: string
   cnpj: string
   grupo_id?: string
+  logo_url?: string
 }
 
 interface AppState {
