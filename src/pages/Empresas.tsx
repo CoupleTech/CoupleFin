@@ -4,7 +4,6 @@ import Layout from '../components/layout/Layout'
 import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Plus, Edit2, Trash2, Building, Check, XCircle, Image as ImageIcon, Search } from 'lucide-react'
-import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
 import { usePagination } from '../hooks/usePagination'
 
@@ -25,7 +24,6 @@ interface Grupo {
 }
 
 export default function Empresas() {
-  const { user } = useAppStore()
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [grupos, setGrupos] = useState<Grupo[]>([])
   const [loading, setLoading] = useState(true)
