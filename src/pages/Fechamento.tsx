@@ -48,6 +48,11 @@ export default function Fechamento() {
       .gte('competencia', dataInicio)
       .lte('competencia', dataFim)
 
+    if (error) {
+      console.error("Erro ao carregar períodos:", error)
+      alert("Erro ao carregar períodos: " + error.message + " (Verifique as Foreign Keys)")
+    }
+
     if (!error && data) {
       // Mesclar os retornados com a lista completa de 12 meses
       const mesclado: Periodo[] = []
