@@ -443,11 +443,13 @@ export default function Equipe() {
                               {grupo.nome}
                             </span>
                           </div>
-                          <Toggle 
-                            checked={isLinked} 
-                            onChange={() => handleToggleGrupo(grupo.id)} 
-                            label="" 
-                          />
+                          <div className="pointer-events-none">
+                            <Toggle 
+                              checked={isLinked} 
+                              onChange={() => {}} 
+                              label="" 
+                            />
+                          </div>
                         </div>
                       )
                     })}
