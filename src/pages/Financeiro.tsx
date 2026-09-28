@@ -55,6 +55,7 @@ export default function Financeiro() {
   // Ações
   const [isModalBaixaOpen, setIsModalBaixaOpen] = useState(false)
   const [isModalEstornoOpen, setIsModalEstornoOpen] = useState(false)
+  const [isModalDetalhesOpen, setIsModalDetalhesOpen] = useState(false)
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null)
   
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -438,7 +439,10 @@ export default function Financeiro() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {}}
+                                onClick={() => {
+                                  setLancamentoSelecionado(lanc)
+                                  setIsModalDetalhesOpen(true)
+                                }}
                                 title="Detalhes"
                               >
                                 Ver Detalhes
@@ -510,6 +514,78 @@ export default function Financeiro() {
             <Button type="submit" className="!bg-danger hover:!bg-danger-dark !border-danger" loading={isSubmitting}>Estornar</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* MODAL DE DETALHES */}
+      <Modal
+        isOpen={isModalDetalhesOpen}
+        onClose={() => setIsModalDetalhesOpen(false)}
+        title="Detalhes do Lançamento"
+        size="md"
+      >
+        {lancamentoSelecionado && (
+          <div className="space-y-4 text-sm text-slate-700">
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+              <div>
+                <span className="block text-xs text-slate-500 font-medium mb-1">Descrição</span>
+                <p className="font-semibold">{lancamentoSelecionado.descricao}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium mb-1">Valor</span>
+                <p className={`font-semibold ${lancamentoSelecionado.tipo === 'receita' ? 'text-success' : 'text-danger'}`}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lancamentoSelecionado.valor)}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Tipo</span>
+                <p className="capitalize">{lancamentoSelecionado.tipo}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Subtipo</span>
+                <p className="capitalize">{lancamentoSelecionado.subtipo.replace('_', ' ')}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Status do Lançamento</span>
+                <p className="capitalize">{lancamentoSelecionado.status}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Situação de Pagamento</span>
+                <p className="capitalize">{lancamentoSelecionado.status_pagamento}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Data Competência</span>
+                <p>{format(new Date(lancamentoSelecionado.data_competencia + 'T12:00:00'), 'dd/MM/yyyy')}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Data Vencimento</span>
+                <p>{lancamentoSelecionado.data_vencimento ? format(new Date(lancamentoSelecionado.data_vencimento + 'T12:00:00'), 'dd/MM/yyyy') : '-'}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Data Pagamento</span>
+                <p>{lancamentoSelecionado.data_pagamento ? format(new Date(lancamentoSelecionado.data_pagamento + 'T12:00:00'), 'dd/MM/yyyy') : '-'}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Centro de Custo</span>
+                <p>{lancamentoSelecionado.centro_custo?.nome || '-'}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Classificação (DRE)</span>
+                <p>{lancamentoSelecionado.tipo_despesa?.nome || '-'}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Fornecedor / Origem</span>
+                <p>{lancamentoSelecionado.fornecedores?.razao_social || '-'}</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end pt-4 border-t border-slate-100 mt-6">
+              <Button onClick={() => setIsModalDetalhesOpen(false)}>Fechar</Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
     </Layout>
