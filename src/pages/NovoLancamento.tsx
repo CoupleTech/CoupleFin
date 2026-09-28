@@ -275,7 +275,7 @@ export default function NovoLancamento() {
         }
       />
 
-      <div className="max-w-4xl">
+      <div className="max-w-5xl mx-auto">
         <form onSubmit={handleSalvar} className="space-y-6">
           
           {/* SEÇÃO 1: Tipo de Lançamento */}
