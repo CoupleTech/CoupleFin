@@ -517,7 +517,7 @@ export default function Equipe() {
               />
               <Button 
                 type="button"
-                variant={isCopied ? "success" : "primary"}
+                variant={isCopied ? "secondary" : "primary"}
                 onClick={copyToClipboard}
                 icon={isCopied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               >

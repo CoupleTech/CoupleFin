@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Button, Input, PageHeader } from '../components/ui'
+import { Button, Input } from '../components/ui'
 import { toast } from '../store/useToastStore'
 import { CheckCircle, Shield } from 'lucide-react'
 
