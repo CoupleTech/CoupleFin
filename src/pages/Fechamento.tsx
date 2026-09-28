@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
-import { Button, Select, Badge, EmptyState, PageHeader } from '../components/ui'
+import { Button, Select, Badge, EmptyState, PageHeader, Modal } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Lock, Unlock, Calendar } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
@@ -25,6 +25,7 @@ export default function Fechamento() {
   const [loading, setLoading] = useState(true)
   const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear().toString())
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [periodoParaAlternar, setPeriodoParaAlternar] = useState<Periodo | null>(null)
 
   useEffect(() => {
     if (empresaAtivaId) {
@@ -75,24 +76,17 @@ export default function Fechamento() {
     setLoading(false)
   }
 
-  const handleTogglePeriodo = async (periodo: Periodo) => {
-    if (!empresaAtivaId || !user) return
+  const handleTogglePeriodo = (periodo: Periodo) => {
+    setPeriodoParaAlternar(periodo)
+  }
+
+  const confirmTogglePeriodo = async () => {
+    if (!empresaAtivaId || !user || !periodoParaAlternar) return
     setIsSubmitting(true)
 
+    const periodo = periodoParaAlternar
     const isFechado = periodo.status === 'fechado'
     const novoStatus = isFechado ? 'aberto' : 'fechado'
-
-    if (isFechado) {
-      if (!confirm('ATENÇÃO: Reabrir um período permite que alterações e novos lançamentos sejam criados nesta competência. Esta ação será registrada na auditoria. Deseja continuar?')) {
-        setIsSubmitting(false)
-        return
-      }
-    } else {
-      if (!confirm('Fechar o período bloqueará permanentemente a criação e edição de lançamentos neste mês. Deseja continuar?')) {
-        setIsSubmitting(false)
-        return
-      }
-    }
 
     const payload = {
       empresa_id: empresaAtivaId,
@@ -126,6 +120,7 @@ export default function Fechamento() {
 
     await carregarDados()
     setIsSubmitting(false)
+    setPeriodoParaAlternar(null)
   }
 
   const anosDisponiveis = Array.from({ length: 5 }, (_, i) => {
@@ -227,6 +222,35 @@ export default function Fechamento() {
           </div>
         )}
       </div>
+      {periodoParaAlternar && (
+        <Modal
+          isOpen={!!periodoParaAlternar}
+          onClose={() => setPeriodoParaAlternar(null)}
+          title={periodoParaAlternar.status === 'fechado' ? 'Reabrir Período' : 'Fechar Mês'}
+          icon={periodoParaAlternar.status === 'fechado' ? <Unlock className="w-5 h-5 text-primary" /> : <Lock className="w-5 h-5 text-danger" />}
+        >
+          <div className="space-y-4">
+            <p className="text-slate-600">
+              {periodoParaAlternar.status === 'fechado'
+                ? 'ATENÇÃO: Reabrir um período permite que alterações e novos lançamentos sejam criados nesta competência. Esta ação será registrada na auditoria. Deseja continuar?'
+                : 'Fechar o período bloqueará permanentemente a criação e edição de lançamentos neste mês. Deseja continuar?'
+              }
+            </p>
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="secondary" onClick={() => setPeriodoParaAlternar(null)} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button 
+                variant={periodoParaAlternar.status === 'fechado' ? "primary" : "danger"} 
+                onClick={confirmTogglePeriodo}
+                loading={isSubmitting}
+              >
+                {periodoParaAlternar.status === 'fechado' ? 'Confirmar Reabertura' : 'Confirmar Fechamento'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Layout>
   )
 }
