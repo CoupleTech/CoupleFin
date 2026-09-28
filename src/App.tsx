@@ -48,12 +48,12 @@ function App() {
         .eq('id', sessionUser.id)
         .single()
 
-      const { data: vinculos } = await supabase
-        .from('usuarios_empresas')
-        .select('empresas(id, nome_fantasia, razao_social, cnpj, grupo_id)')
-        .eq('usuario_id', sessionUser.id)
+      const { data: empresasData } = await supabase
+        .from('empresas')
+        .select('id, nome_fantasia, razao_social, cnpj, grupo_id, logo_url')
+        .order('created_at', { ascending: true })
 
-      const empresas = (vinculos || []).map((v: any) => v.empresas).filter(Boolean)
+      const empresas = empresasData || []
       
       let cor_primaria = '#f97316' // Laranja Padrão
       

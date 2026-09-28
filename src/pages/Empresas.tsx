@@ -155,10 +155,7 @@ export default function Empresas() {
     if (formData.id) {
       await supabase.from('empresas').update(payload).eq('id', formData.id)
     } else {
-      const { data: novaEmpresa, error } = await supabase.from('empresas').insert([payload]).select().single()
-      if (!error && novaEmpresa && user) {
-        await supabase.from('usuarios_empresas').insert([{ usuario_id: user.id, empresa_id: novaEmpresa.id }])
-      }
+      await supabase.from('empresas').insert([payload])
     }
     
     setIsSubmitting(false)
