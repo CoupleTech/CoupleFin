@@ -253,6 +253,15 @@ CREATE POLICY "Ler prÃ³prio perfil" ON usuarios
 CREATE POLICY "Ler perfis de usuÃ¡rio" ON perfis_usuario
   FOR SELECT USING (auth.role() = 'authenticated');
 
+CREATE POLICY "Criar perfis de usuÃ¡rio" ON perfis_usuario
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Editar perfis de usuÃ¡rio" ON perfis_usuario
+  FOR UPDATE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Excluir perfis de usuÃ¡rio" ON perfis_usuario
+  FOR DELETE USING (auth.role() = 'authenticated');
+
 -- 2.7 PolÃ­ticas: convites_equipe
 -- Admin pode ver e gerenciar convites da sua empresa
 CREATE POLICY "Gerenciar convites da prÃ³pria empresa" ON convites_equipe
