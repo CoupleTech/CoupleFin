@@ -248,6 +248,6 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 - [x] 1. Planejamento (Atualização Fase.md)
 - [x] 2. Execução Passo 1: Tabelas Base
 - [x] 3. Execução Passo 2: Convites e RPC
-- [ ] 4. Execução Passo 3: Políticas RLS
+- [x] 4. Execução Passo 3: Políticas RLS
 - [ ] 5. Execução Passo 4: Frontend
 - [ ] 6. Testes Finais e Release
