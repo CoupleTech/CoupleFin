@@ -490,7 +490,7 @@ export default function NovoLancamento() {
                 value={formData.conta_id}
                 onChange={(e) => setFormData({...formData, conta_id: e.target.value})}
                 options={opsContas}
-                required
+                required={isTransfConta || isTransfEmpresa}
                 disabled={loadingDados}
               />
 
