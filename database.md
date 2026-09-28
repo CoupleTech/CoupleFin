@@ -63,10 +63,10 @@ CREATE TABLE usuarios (
   created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE usuarios_empresas (
+CREATE TABLE usuarios_grupos (
   usuario_id uuid REFERENCES usuarios(id) ON DELETE CASCADE,
-  empresa_id uuid REFERENCES empresas(id) ON DELETE CASCADE,
-  PRIMARY KEY (usuario_id, empresa_id)
+  grupo_id uuid REFERENCES grupos_economicos(id) ON DELETE CASCADE,
+  PRIMARY KEY (usuario_id, grupo_id)
 );
 
 -- Cadastros base (por empresa)

@@ -232,3 +232,22 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 - [x] 3. Criação da tabela, RPC e tela de Aceitação.
 - [x] 4. Testes do Fluxo de Novos Usuários.
 - [x] 5. Release Decision.
+
+---
+
+### Fase 12: Refatoração Arquitetural (Acesso por Grupo Econômico) (EM ANDAMENTO)
+**Objetivo:** Alterar a arquitetura multi-tenant para que o usuário seja vinculado ao Grupo Econômico, em vez de Empresas individuais.
+
+**Tarefas Planejadas:**
+- [ ] 1. **Banco de Dados (Tabelas):** Excluir a tabela `usuarios_empresas` e criar a tabela `usuarios_grupos`.
+- [ ] 2. **Banco de Dados (Convites e RPC):** Alterar a tabela `convites_equipe` (`empresa_id` -> `grupo_id`) e atualizar a RPC `aceitar_convite_usuario`.
+- [ ] 3. **Banco de Dados (RLS):** Reescrever as regras de segurança de todas as tabelas transacionais para validar acesso via `usuarios_grupos`.
+- [ ] 4. **Frontend:** Ajustar `Equipe.tsx` (geração de convites) e `useAppStore.ts` para trabalhar nativamente em nível de Grupo.
+
+*Pipeline de Execução:*
+- [x] 1. Planejamento (Atualização Fase.md)
+- [x] 2. Execução Passo 1: Tabelas Base
+- [ ] 3. Execução Passo 2: Convites e RPC
+- [ ] 4. Execução Passo 3: Políticas RLS
+- [ ] 5. Execução Passo 4: Frontend
+- [ ] 6. Testes Finais e Release
