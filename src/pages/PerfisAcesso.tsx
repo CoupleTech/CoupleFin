@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, Modal, EmptyState, PageHeader } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Shield, Plus, Edit2, Trash2, CheckCircle, Save } from 'lucide-react'
+import { Shield, Plus, Edit2, Trash2, Save } from 'lucide-react'
 import { toast } from '../store/useToastStore'
 
 interface Perfil {
