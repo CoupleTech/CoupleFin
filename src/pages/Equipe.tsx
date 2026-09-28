@@ -45,7 +45,8 @@ export default function Equipe() {
     nome: '', 
     perfil_id: '',
     ativo: true,
-    grupos_vinculados: [] as string[]
+    grupos_vinculados: [] as string[],
+    grupos_vinculados_originais: [] as string[]
   })
 
   // Invite Modal States
@@ -109,7 +110,8 @@ export default function Equipe() {
       nome: usuario.nome,
       perfil_id: usuario.perfil_id || '',
       ativo: usuario.ativo,
-      grupos_vinculados: usuario.usuarios_grupos?.map(v => v.grupo_id) || []
+      grupos_vinculados: usuario.usuarios_grupos?.map(v => v.grupo_id) || [],
+      grupos_vinculados_originais: usuario.usuarios_grupos?.map(v => v.grupo_id) || []
     })
     setIsModalOpen(true)
   }
@@ -142,13 +144,22 @@ export default function Equipe() {
       ativo: formData.ativo
     }).eq('id', formData.id)
 
-    // 2. Atualiza vínculos de grupo
-    // Primeiro remove todos os vínculos atuais
-    await supabase.from('usuarios_grupos').delete().eq('usuario_id', formData.id)
+    // 2. Atualiza vínculos de grupo calculando o diff
+    const originais = formData.grupos_vinculados_originais;
+    const atuais = formData.grupos_vinculados;
     
-    // Depois insere os novos
-    if (formData.grupos_vinculados.length > 0) {
-      const novosVinculos = formData.grupos_vinculados.map(grupo_id => ({
+    const paraRemover = originais.filter(g => !atuais.includes(g));
+    const paraAdicionar = atuais.filter(g => !originais.includes(g));
+
+    if (paraRemover.length > 0) {
+      await supabase.from('usuarios_grupos')
+        .delete()
+        .eq('usuario_id', formData.id)
+        .in('grupo_id', paraRemover)
+    }
+    
+    if (paraAdicionar.length > 0) {
+      const novosVinculos = paraAdicionar.map(grupo_id => ({
         usuario_id: formData.id,
         grupo_id
       }))
