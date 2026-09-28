@@ -53,6 +53,7 @@ export default function Equipe() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [invitePerfilId, setInvitePerfilId] = useState('')
+  const [inviteGrupoId, setInviteGrupoId] = useState('')
   const [generatedLink, setGeneratedLink] = useState('')
   const [isCopied, setIsCopied] = useState(false)
 
@@ -174,6 +175,7 @@ export default function Equipe() {
   const openInviteModal = () => {
     setInviteEmail('')
     setInvitePerfilId('')
+    setInviteGrupoId(grupos.length > 0 ? grupos[0].id : '')
     setGeneratedLink('')
     setIsCopied(false)
     setIsInviteModalOpen(true)
@@ -181,15 +183,12 @@ export default function Equipe() {
 
   const handleGerarConvite = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!empresaAtivaId || !user) return
+    if (!user) return
 
     setIsSubmitting(true)
     
-    // Achar o grupo_id da empresa ativa
-    const grupoId = todasEmpresas.find(emp => emp.id === empresaAtivaId)?.grupo_id
-
-    if (!grupoId) {
-      toast.error('Não foi possível identificar o grupo ativo.')
+    if (!inviteGrupoId) {
+      toast.error('Selecione um grupo para o convite.')
       setIsSubmitting(false)
       return
     }
@@ -198,7 +197,7 @@ export default function Equipe() {
     const { data, error } = await supabase
       .from('convites_equipe')
       .insert({
-        grupo_id: grupoId,
+        grupo_id: inviteGrupoId,
         email: inviteEmail,
         perfil_id: invitePerfilId,
         criado_por: user.id
@@ -519,8 +518,15 @@ export default function Equipe() {
                 options={perfisOptions.filter(p => p.value !== '')}
                 required
               />
+              <Select
+                label="Grupo Econômico"
+                value={inviteGrupoId}
+                onChange={(e) => setInviteGrupoId(e.target.value)}
+                options={grupos.map(g => ({ value: g.id, label: g.nome }))}
+                required
+              />
               <p className="text-sm text-slate-500 bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100">
-                O usuário convidado será vinculado automaticamente à empresa atual.
+                O usuário será convidado diretamente para este grupo econômico.
               </p>
             </div>
             <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
