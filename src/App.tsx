@@ -12,6 +12,7 @@ import TiposDespesa from './pages/TiposDespesa'
 import Contas from './pages/Contas'
 import DestinosPagamento from './pages/DestinosPagamento'
 import Equipe from './pages/Equipe'
+import PerfisAcesso from './pages/PerfisAcesso'
 import Fornecedores from './pages/Fornecedores'
 import Financeiro from './pages/Financeiro'
 import NovoLancamento from './pages/NovoLancamento'
@@ -126,6 +127,7 @@ function App() {
         <Route path="/contas" element={user ? <Contas /> : <Navigate to="/login" />} />
         <Route path="/destinos-pagamento" element={user ? <DestinosPagamento /> : <Navigate to="/login" />} />
         <Route path="/equipe" element={user ? <Equipe /> : <Navigate to="/login" />} />
+        <Route path="/perfis-acesso" element={user ? <PerfisAcesso /> : <Navigate to="/login" />} />
         <Route path="/fornecedores" element={user ? <Fornecedores /> : <Navigate to="/login" />} />
         <Route path="/financeiro/novo" element={user ? <NovoLancamento /> : <Navigate to="/login" />} />
         <Route path="/financeiro" element={user ? <Financeiro /> : <Navigate to="/login" />} />

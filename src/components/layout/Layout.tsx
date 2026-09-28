@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   Lock,
   Calculator,
-  FileBarChart
+  FileBarChart,
+  Key
 } from 'lucide-react'
 import { NotificationDropdown } from '../ui/NotificationDropdown'
 
@@ -56,6 +57,7 @@ const navItems = [
   { name: 'DRE', path: '/dre', icon: Calculator },
   { name: 'Relatórios', path: '/relatorios', icon: FileBarChart },
   { name: 'Equipe', path: '/equipe', icon: Users },
+  { name: 'Perfis de Acesso', path: '/perfis-acesso', icon: Key },
   { name: 'Auditoria', path: '/auditoria', icon: ShieldCheck },
   { name: 'Fechamento', path: '/fechamento', icon: Lock },
   { name: 'Configurações', path: '/configuracoes', icon: Settings },
@@ -76,6 +78,7 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/dre': { title: 'DRE', subtitle: 'Demonstração do Resultado do Exercício' },
   '/relatorios': { title: 'Relatórios', subtitle: 'Análises gerenciais e listagens avançadas' },
   '/equipe': { title: 'Equipe', subtitle: 'Gestão de usuários e perfis' },
+  '/perfis-acesso': { title: 'Perfis de Acesso', subtitle: 'Crie e edite papéis de acesso do sistema' },
   '/auditoria': { title: 'Auditoria', subtitle: 'Rastreabilidade de alterações no sistema' },
   '/fechamento': { title: 'Fechamento de Período', subtitle: 'Congele os lançamentos de meses já finalizados' },
   '/configuracoes': { title: 'Configurações', subtitle: 'Cores, logo e preferências do sistema' },
