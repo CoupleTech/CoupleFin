@@ -15,10 +15,15 @@ interface Usuario {
   perfil_id: string | null
   ativo: boolean
   perfis_usuario?: { nome: string }
-  usuarios_empresas?: { empresa_id: string; empresas?: { nome_fantasia: string; razao_social?: string } }[]
+  usuarios_grupos?: { grupo_id: string; grupos_economicos?: { nome: string } }[]
 }
 
 interface Perfil {
+  id: string
+  nome: string
+}
+
+interface Grupo {
   id: string
   nome: string
 }
@@ -29,6 +34,7 @@ export default function Equipe() {
   const { empresas: todasEmpresas, empresaAtivaId, user } = useAppStore()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [perfis, setPerfis] = useState<Perfil[]>([])
+  const [grupos, setGrupos] = useState<Grupo[]>([])
   const [loading, setLoading] = useState(true)
   
   // Modal states
@@ -39,7 +45,7 @@ export default function Equipe() {
     nome: '', 
     perfil_id: '',
     ativo: true,
-    empresas_vinculadas: [] as string[]
+    grupos_vinculados: [] as string[]
   })
 
   // Invite Modal States
@@ -74,15 +80,19 @@ export default function Equipe() {
     const { data: perfisData } = await supabase.from('perfis_usuario').select('*').order('nome')
     if (perfisData) setPerfis(perfisData)
 
-    // Buscar Usuários (com perfil e vínculos de empresa)
+    // Buscar Grupos
+    const { data: gruposData } = await supabase.from('grupos_economicos').select('*').order('nome')
+    if (gruposData) setGrupos(gruposData)
+
+    // Buscar Usuários (com perfil e vínculos de grupo)
     const { data: usuariosData, error } = await supabase
       .from('usuarios')
       .select(`
         *,
         perfis_usuario(nome),
-        usuarios_empresas(
-          empresa_id,
-          empresas(nome_fantasia)
+        usuarios_grupos(
+          grupo_id,
+          grupos_economicos(nome)
         )
       `)
       .order('nome', { ascending: true })
@@ -99,7 +109,7 @@ export default function Equipe() {
       nome: usuario.nome,
       perfil_id: usuario.perfil_id || '',
       ativo: usuario.ativo,
-      empresas_vinculadas: usuario.usuarios_empresas?.map(v => v.empresa_id) || []
+      grupos_vinculados: usuario.usuarios_grupos?.map(v => v.grupo_id) || []
     })
     setIsModalOpen(true)
   }
@@ -108,13 +118,13 @@ export default function Equipe() {
     setIsModalOpen(false)
   }
 
-  const handleToggleEmpresa = (empresaId: string) => {
+  const handleToggleGrupo = (grupoId: string) => {
     setFormData(prev => {
-      const isLinked = prev.empresas_vinculadas.includes(empresaId)
+      const isLinked = prev.grupos_vinculados.includes(grupoId)
       if (isLinked) {
-        return { ...prev, empresas_vinculadas: prev.empresas_vinculadas.filter(id => id !== empresaId) }
+        return { ...prev, grupos_vinculados: prev.grupos_vinculados.filter(id => id !== grupoId) }
       } else {
-        return { ...prev, empresas_vinculadas: [...prev.empresas_vinculadas, empresaId] }
+        return { ...prev, grupos_vinculados: [...prev.grupos_vinculados, grupoId] }
       }
     })
   }
@@ -132,17 +142,17 @@ export default function Equipe() {
       ativo: formData.ativo
     }).eq('id', formData.id)
 
-    // 2. Atualiza vínculos de empresa
+    // 2. Atualiza vínculos de grupo
     // Primeiro remove todos os vínculos atuais
-    await supabase.from('usuarios_empresas').delete().eq('usuario_id', formData.id)
+    await supabase.from('usuarios_grupos').delete().eq('usuario_id', formData.id)
     
     // Depois insere os novos
-    if (formData.empresas_vinculadas.length > 0) {
-      const novosVinculos = formData.empresas_vinculadas.map(empresa_id => ({
+    if (formData.grupos_vinculados.length > 0) {
+      const novosVinculos = formData.grupos_vinculados.map(grupo_id => ({
         usuario_id: formData.id,
-        empresa_id
+        grupo_id
       }))
-      await supabase.from('usuarios_empresas').insert(novosVinculos)
+      await supabase.from('usuarios_grupos').insert(novosVinculos)
     }
     
     setIsSubmitting(false)
@@ -164,11 +174,20 @@ export default function Equipe() {
 
     setIsSubmitting(true)
     
+    // Achar o grupo_id da empresa ativa
+    const grupoId = todasEmpresas.find(emp => emp.id === empresaAtivaId)?.grupo_id
+
+    if (!grupoId) {
+      toast.error('Não foi possível identificar o grupo ativo.')
+      setIsSubmitting(false)
+      return
+    }
+
     // Insere na tabela convites_equipe
     const { data, error } = await supabase
       .from('convites_equipe')
       .insert({
-        empresa_id: empresaAtivaId,
+        grupo_id: grupoId,
         email: inviteEmail,
         perfil_id: invitePerfilId,
         criado_por: user.id
@@ -246,7 +265,7 @@ export default function Equipe() {
                 <tr>
                   <th className="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Usuário</th>
                   <th className="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Perfil</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Empresas Vinculadas</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Grupos Vinculados</th>
                   <th className="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
                   <th className="px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Ações</th>
                 </tr>
@@ -274,10 +293,10 @@ export default function Equipe() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {user.usuarios_empresas && user.usuarios_empresas.length > 0 ? (
-                          user.usuarios_empresas.map(v => (
-                            <Badge key={v.empresa_id} variant="primary" className="!bg-primary/5 !text-primary !border-primary/10">
-                              {v.empresas?.nome_fantasia || v.empresas?.razao_social}
+                        {user.usuarios_grupos && user.usuarios_grupos.length > 0 ? (
+                          user.usuarios_grupos.map(v => (
+                            <Badge key={v.grupo_id} variant="primary" className="!bg-primary/5 !text-primary !border-primary/10">
+                              {v.grupos_economicos?.nome || 'Grupo'}
                             </Badge>
                           ))
                         ) : (
@@ -350,14 +369,14 @@ export default function Equipe() {
                 </div>
                 
                 <div className="mt-2 pl-13 flex flex-wrap gap-1">
-                   {user.usuarios_empresas && user.usuarios_empresas.length > 0 ? (
-                      user.usuarios_empresas.map(v => (
-                        <Badge key={v.empresa_id} variant="primary" className="!bg-primary/5 !text-primary !border-primary/10 text-[10px]">
-                          {v.empresas?.nome_fantasia || v.empresas?.razao_social}
+                   {user.usuarios_grupos && user.usuarios_grupos.length > 0 ? (
+                      user.usuarios_grupos.map(v => (
+                        <Badge key={v.grupo_id} variant="primary" className="!bg-primary/5 !text-primary !border-primary/10 text-[10px]">
+                          {v.grupos_economicos?.nome || 'Grupo'}
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-xs text-slate-400 italic">Nenhuma empresa vinculada</span>
+                      <span className="text-xs text-slate-400 italic">Nenhum grupo vinculado</span>
                     )}
                 </div>
               </div>
@@ -404,29 +423,29 @@ export default function Equipe() {
             </div>
             
             <div>
-              <p className="block text-sm font-medium text-slate-700 mb-2">Empresas Vinculadas</p>
+              <p className="block text-sm font-medium text-slate-700 mb-2">Grupos Vinculados</p>
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                {todasEmpresas.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic">Nenhuma empresa cadastrada no sistema.</p>
+                {grupos.length === 0 ? (
+                  <p className="text-sm text-slate-500 italic">Nenhum grupo cadastrado no sistema.</p>
                 ) : (
                   <div className="space-y-3">
-                    {todasEmpresas.map(empresa => {
-                      const isLinked = formData.empresas_vinculadas.includes(empresa.id)
+                    {grupos.map(grupo => {
+                      const isLinked = formData.grupos_vinculados.includes(grupo.id)
                       return (
                         <div 
-                          key={empresa.id} 
+                          key={grupo.id} 
                           className="flex items-center justify-between p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200 cursor-pointer"
-                          onClick={() => handleToggleEmpresa(empresa.id)}
+                          onClick={() => handleToggleGrupo(grupo.id)}
                         >
                           <div className="flex items-center gap-3">
                             <Building className={`w-4 h-4 ${isLinked ? 'text-primary' : 'text-slate-400'}`} />
                             <span className={`text-sm font-medium ${isLinked ? 'text-slate-800' : 'text-slate-500'}`}>
-                              {empresa.nome_fantasia || empresa.razao_social}
+                              {grupo.nome}
                             </span>
                           </div>
                           <Toggle 
                             checked={isLinked} 
-                            onChange={() => handleToggleEmpresa(empresa.id)} 
+                            onChange={() => handleToggleGrupo(grupo.id)} 
                             label="" 
                           />
                         </div>
@@ -436,7 +455,7 @@ export default function Equipe() {
                 )}
               </div>
               <p className="text-xs text-slate-500 mt-2">
-                O usuário só poderá visualizar lançamentos, contas e relatórios das empresas selecionadas acima.
+                O usuário terá acesso a todas as empresas vinculadas aos grupos selecionados acima.
               </p>
             </div>
 

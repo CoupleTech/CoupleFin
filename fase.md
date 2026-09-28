@@ -235,7 +235,7 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 
 ---
 
-### Fase 12: Refatoração Arquitetural (Acesso por Grupo Econômico) (EM ANDAMENTO)
+### Fase 12: Refatoração Arquitetural (Acesso por Grupo Econômico) (CONCLUÍDA)
 **Objetivo:** Alterar a arquitetura multi-tenant para que o usuário seja vinculado ao Grupo Econômico, em vez de Empresas individuais.
 
 **Tarefas Planejadas:**
@@ -249,5 +249,5 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 - [x] 2. Execução Passo 1: Tabelas Base
 - [x] 3. Execução Passo 2: Convites e RPC
 - [x] 4. Execução Passo 3: Políticas RLS
-- [ ] 5. Execução Passo 4: Frontend
-- [ ] 6. Testes Finais e Release
+- [x] 5. Execução Passo 4: Frontend
+- [x] 6. Testes Finais e Release
