@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, Select, PageHeader, Toggle } from '../components/ui'
-import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X, Camera } from 'lucide-react'
+import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X, Camera, Network } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
 import { isPeriodoFechado } from '../lib/gatekeeper'
@@ -80,9 +80,14 @@ export default function NovoLancamento() {
   // Arquivos
   const [arquivos, setArquivos] = useState<File[]>([])
 
+  // Rateio
+  const [isRateio, setIsRateio] = useState(false)
+  const [empresasRateio, setEmpresasRateio] = useState<string[]>([])
+
   useEffect(() => {
     if (empresaAtivaId && grupo_id) {
       carregarCatalogos()
+      if (empresasRateio.length === 0) setEmpresasRateio([empresaAtivaId])
     }
   }, [empresaAtivaId, grupo_id])
 
@@ -159,45 +164,75 @@ export default function NovoLancamento() {
       return
     }
 
-    const payload = {
-      empresa_id: empresaAtivaId,
-      tipo: formData.tipo,
-      subtipo: formData.subtipo,
-      valor: parseFloat(formData.valor) || 0,
-      descricao: formData.descricao,
-      data_competencia: formData.data_competencia,
-      data_vencimento: formData.data_vencimento || null,
-      data_pagamento: formData.ja_pago && formData.data_pagamento ? formData.data_pagamento : null,
-      status_pagamento: formData.ja_pago ? 'pago' : 'pendente',
-      
-      // Relacionamentos básicos
-      centro_custo_id: formData.centro_custo_id || null,
-      tipo_despesa_id: formData.tipo_despesa_id || null,
-      conta_id: formData.conta_id || null,
-      
-      // Opcionais/Condicionais
-      fornecedor_id: formData.fornecedor_id || null,
-      destino_pagamento_id: formData.destino_pagamento_id || null,
-      chave_acesso: formData.tipo === 'nota_fiscal' ? formData.chave_acesso : null,
-      numero_documento: formData.tipo === 'nota_fiscal' ? formData.numero_documento : null,
-      
-      // Transferências
-      empresa_origem_id: formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null,
-      empresa_destino_id: formData.subtipo === 'transferencia_empresa' ? formData.empresa_destino_id : null,
-      conta_origem_id: formData.subtipo === 'transferencia_conta' ? formData.conta_id : null,
-      conta_destino_id: formData.subtipo === 'transferencia_conta' ? formData.conta_destino_id : null,
-    }
-
-    const { data: lancamento, error } = await supabase.from('lancamentos').insert([payload]).select().single()
+    const arrayEmpresas = isRateio && empresasRateio.length > 0 && formData.subtipo !== 'transferencia_empresa' && formData.subtipo !== 'transferencia_conta' ? empresasRateio : [empresaAtivaId]
+    const valorTotal = parseFloat(formData.valor) || 0
+    const valorUnitario = valorTotal / arrayEmpresas.length
     
-    if (error) {
-      toast.error("Erro ao salvar lançamento: " + error.message)
-      setIsSubmitting(false)
-      return
+    let idsCriados: string[] = []
+    
+    // Obter nomes originais para tentar match nas outras empresas
+    const nomeTD = formData.tipo_despesa_id ? tiposDespesa.find(t => t.id === formData.tipo_despesa_id)?.nome : null
+    const nomeCC = formData.centro_custo_id ? centrosCusto.find(t => t.id === formData.centro_custo_id)?.nome : null
+
+    for (const empId of arrayEmpresas) {
+      let targetTD = null
+      let targetCC = null
+
+      if (empId === empresaAtivaId) {
+        targetTD = formData.tipo_despesa_id || null
+        targetCC = formData.centro_custo_id || null
+      } else {
+        if (nomeTD) {
+          const { data } = await supabase.from('tipo_despesa').select('id').eq('empresa_id', empId).eq('nome', nomeTD).eq('ativo', true).single()
+          if (data) targetTD = data.id
+        }
+        if (nomeCC) {
+          const { data } = await supabase.from('centro_custo').select('id').eq('empresa_id', empId).eq('nome', nomeCC).eq('ativo', true).single()
+          if (data) targetCC = data.id
+        }
+      }
+
+      const payload = {
+        empresa_id: empId,
+        tipo: formData.tipo,
+        subtipo: formData.subtipo,
+        valor: valorUnitario,
+        descricao: arrayEmpresas.length > 1 ? `${formData.descricao} (Rateio)` : formData.descricao,
+        data_competencia: formData.data_competencia,
+        data_vencimento: formData.data_vencimento || null,
+        data_pagamento: (formData.ja_pago && formData.data_pagamento && empId === empresaAtivaId) ? formData.data_pagamento : null,
+        status_pagamento: (formData.ja_pago && empId === empresaAtivaId) ? 'pago' : 'pendente',
+        
+        // Relacionamentos básicos
+        centro_custo_id: targetCC,
+        tipo_despesa_id: targetTD,
+        conta_id: empId === empresaAtivaId ? (formData.conta_id || null) : null,
+        
+        // Opcionais/Condicionais
+        fornecedor_id: formData.fornecedor_id || null,
+        destino_pagamento_id: empId === empresaAtivaId ? (formData.destino_pagamento_id || null) : null,
+        chave_acesso: formData.tipo === 'nota_fiscal' ? formData.chave_acesso : null,
+        numero_documento: formData.tipo === 'nota_fiscal' ? formData.numero_documento : null,
+        
+        // Transferências
+        empresa_origem_id: formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null,
+        empresa_destino_id: formData.subtipo === 'transferencia_empresa' ? formData.empresa_destino_id : null,
+        conta_origem_id: formData.subtipo === 'transferencia_conta' ? formData.conta_id : null,
+        conta_destino_id: formData.subtipo === 'transferencia_conta' ? formData.conta_destino_id : null,
+      }
+
+      const { data: lancamento, error } = await supabase.from('lancamentos').insert([payload]).select().single()
+      
+      if (error) {
+        toast.error(`Erro ao salvar rateio na empresa (${empId}): ` + error.message)
+      } else if (lancamento) {
+        idsCriados.push(lancamento.id)
+      }
     }
 
     // 2. Upload de Anexos se houver
-    if (lancamento && arquivos.length > 0) {
+    if (idsCriados.length > 0 && arquivos.length > 0) {
+      const primeiroId = idsCriados[0]
       for (const arquivo of arquivos) {
         let arquivoParaUpload = arquivo
         const ext = arquivo.name.split('.').pop()?.toLowerCase()
@@ -218,7 +253,7 @@ export default function NovoLancamento() {
           }
         }
 
-        const path = `${empresaAtivaId}/${lancamento.id}/${Date.now()}_${arquivoParaUpload.name}`
+        const path = `${empresaAtivaId}/${primeiroId}/${Date.now()}_${arquivoParaUpload.name}`
         
         const { error: uploadError } = await supabase.storage
           .from('anexos')
@@ -232,11 +267,13 @@ export default function NovoLancamento() {
           if (ext === 'pdf') tipo_arquivo = 'pdf'
           if (ext === 'xml') tipo_arquivo = 'xml'
 
-          await supabase.from('lancamento_anexos').insert([{
-            lancamento_id: lancamento.id,
-            arquivo_url: publicUrl, // ou o path original caso precise gerar url assinada no futuro
+          const insertAnexos = idsCriados.map(lid => ({
+            lancamento_id: lid,
+            arquivo_url: publicUrl,
             tipo_arquivo
-          }])
+          }))
+
+          await supabase.from('lancamento_anexos').insert(insertAnexos)
         } else {
           console.error("Falha no upload do anexo:", uploadError)
         }
@@ -358,16 +395,59 @@ export default function NovoLancamento() {
             </div>
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input
-                  label="Valor (R$)"
-                  type="number"
-                  step="0.01"
-                  required
-                  value={formData.valor}
-                  onChange={(e) => setFormData({...formData, valor: e.target.value})}
-                  placeholder="0.00"
-                  className="text-lg font-medium"
-                />
+                <div className="space-y-4">
+                  <Input
+                    label="Valor Total (R$)"
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.valor}
+                    onChange={(e) => setFormData({...formData, valor: e.target.value})}
+                    placeholder="0.00"
+                    className="text-lg font-medium"
+                  />
+                  {!isTransfConta && !isTransfEmpresa && (
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <Toggle
+                        checked={isRateio}
+                        onChange={setIsRateio}
+                        label={<span className="text-sm font-medium text-slate-700 flex items-center gap-1.5"><Network className="w-4 h-4 text-primary" /> Ratear entre Empresas?</span>}
+                      />
+                      
+                      {isRateio && (
+                        <div className="mt-3 pt-3 border-t border-slate-200">
+                          <p className="text-xs text-slate-500 mb-2">O valor total será dividido igualmente entre as empresas selecionadas.</p>
+                          <div className="grid grid-cols-1 gap-2">
+                            {empresas.map(emp => (
+                              <label key={emp.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={empresasRateio.includes(emp.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) setEmpresasRateio([...empresasRateio, emp.id])
+                                    else {
+                                      if (empresasRateio.length > 1) {
+                                        setEmpresasRateio(empresasRateio.filter(id => id !== emp.id))
+                                      }
+                                    }
+                                  }}
+                                  className="rounded border-slate-300 text-primary focus:ring-primary"
+                                />
+                                {emp.nome_fantasia || emp.razao_social}
+                              </label>
+                            ))}
+                          </div>
+                          
+                          {empresasRateio.length > 0 && formData.valor && (
+                            <div className="mt-3 p-2 bg-blue-50 text-blue-700 rounded text-sm text-center">
+                              {empresasRateio.length} lançamentos de <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(formData.valor) / empresasRateio.length)}</strong>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <Input
                   label="Descrição / Referência"
                   type="text"
