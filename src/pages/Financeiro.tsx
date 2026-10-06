@@ -70,6 +70,7 @@ export default function Financeiro() {
   const [motivoEstorno, setMotivoEstorno] = useState('')
   const [novoValor, setNovoValor] = useState<number | ''>('')
   const [novaDataVencimento, setNovaDataVencimento] = useState('')
+  const [novaDescricao, setNovaDescricao] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -295,7 +296,7 @@ export default function Financeiro() {
 
   const handleEditarLancamento = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!lancamentoSelecionado || !user || !empresaAtivaId || novoValor === '' || Number(novoValor) <= 0 || !novaDataVencimento) return
+    if (!lancamentoSelecionado || !user || !empresaAtivaId || novoValor === '' || Number(novoValor) <= 0 || !novaDataVencimento || !novaDescricao.trim()) return
     setIsSubmitting(true)
 
     const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
@@ -309,7 +310,8 @@ export default function Financeiro() {
     const { error } = await supabase.from('lancamentos')
       .update({ 
         valor: Number(novoValor),
-        data_vencimento: novaDataVencimento
+        data_vencimento: novaDataVencimento,
+        descricao: novaDescricao.trim()
       })
       .eq('id', lancamentoSelecionado.id)
 
@@ -340,6 +342,18 @@ export default function Financeiro() {
         })
       }
 
+      if (lancamentoSelecionado.descricao !== novaDescricao.trim()) {
+        historicos.push({
+          tabela: 'lancamentos',
+          registro_id: lancamentoSelecionado.id,
+          usuario_id: user.id,
+          campo_alterado: 'descricao',
+          valor_anterior: lancamentoSelecionado.descricao,
+          valor_novo: novaDescricao.trim(),
+          acao: 'edicao'
+        })
+      }
+
       if (historicos.length > 0) {
         await supabase.from('historico_alteracoes').insert(historicos)
       }
@@ -358,6 +372,7 @@ export default function Financeiro() {
     setLancamentoSelecionado(l)
     setNovoValor(l.valor)
     setNovaDataVencimento(l.data_vencimento || l.data_competencia)
+    setNovaDescricao(l.descricao)
     setIsModalEditarValorOpen(true)
   }
 
@@ -748,6 +763,13 @@ export default function Financeiro() {
         size="sm"
       >
         <form onSubmit={handleEditarLancamento} className="space-y-4">
+          <Input
+            label="Descrição / Referência"
+            type="text"
+            required
+            value={novaDescricao}
+            onChange={(e) => setNovaDescricao(e.target.value)}
+          />
           <Input
             label="Data de Vencimento"
             type="date"
