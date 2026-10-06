@@ -140,7 +140,7 @@ explicitamente o controle de vencimento — essencial em qualquer sistema financ
 - Tela de **"Contas a Pagar"**: lista de lançamentos pendentes/atrasados, agrupável por
   empresa, vencimento, centro de custo ou fornecedor.
 - **Baixa de pagamento** (marcar como pago, com data de pagamento efetiva — pode ser
-  diferente da data de vencimento).
+  diferente da data de vencimento). **[Fase 14]** Durante a baixa, é possível registrar `valor_acrescimo` (juros, multas) e `valor_desconto` (abatimentos), mantendo o valor original intacto e somando no valor total pago.
 - **[DECISÃO PENDENTE]** Notificações/alertas de vencimento próximo ou atrasado (na
   tela/dashboard e, opcionalmente, por e-mail).
 
@@ -376,6 +376,8 @@ lancamentos (
   chave_acesso text null,     -- para notas fiscais
   numero_documento text null,
   valor numeric not null,
+  valor_acrescimo numeric default 0, -- [Fase 14] juros, multas e taxas
+  valor_desconto numeric default 0,  -- [Fase 14] abatimentos e descontos
   data_competencia date,
   data_vencimento date null,        -- [COMPLEMENTO]
   data_pagamento date null,

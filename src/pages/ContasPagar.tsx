@@ -21,6 +21,8 @@ interface Lancamento {
   tipo: string
   subtipo: string
   valor: number
+  valor_acrescimo?: number
+  valor_desconto?: number
   data_competencia: string
   data_vencimento: string | null
   descricao: string
@@ -40,6 +42,8 @@ export default function ContasPagar() {
   const [isModalBaixaOpen, setIsModalBaixaOpen] = useState(false)
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null)
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [valorAcrescimo, setValorAcrescimo] = useState<number | ''>('')
+  const [valorDesconto, setValorDesconto] = useState<number | ''>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -56,7 +60,7 @@ export default function ContasPagar() {
     const { data, error } = await supabase
       .from('lancamentos')
       .select(`
-        id, tipo, subtipo, valor, data_competencia, data_vencimento, descricao, status_pagamento,
+        id, tipo, subtipo, valor, valor_acrescimo, valor_desconto, data_competencia, data_vencimento, descricao, status_pagamento,
         fornecedores(razao_social),
         centro_custo(nome),
         tipo_despesa(nome, grupo_dre)
@@ -86,6 +90,8 @@ export default function ContasPagar() {
   const openBaixa = (l: Lancamento) => {
     setLancamentoSelecionado(l)
     setDataBaixa(format(new Date(), 'yyyy-MM-dd'))
+    setValorAcrescimo('')
+    setValorDesconto('')
     setIsModalBaixaOpen(true)
   }
 
@@ -106,7 +112,9 @@ export default function ContasPagar() {
     const { error } = await supabase.from('lancamentos')
       .update({ 
         status_pagamento: 'pago', 
-        data_pagamento: dataBaixa 
+        data_pagamento: dataBaixa,
+        valor_acrescimo: Number(valorAcrescimo) || 0,
+        valor_desconto: Number(valorDesconto) || 0
       })
       .eq('id', lancamentoSelecionado.id)
 
@@ -299,6 +307,40 @@ export default function ContasPagar() {
             value={dataBaixa}
             onChange={(e) => setDataBaixa(e.target.value)}
           />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Acréscimos (Juros/Multa)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={valorAcrescimo}
+              onChange={(e) => setValorAcrescimo(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="0,00"
+            />
+            <Input
+              label="Descontos (Abatimento)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={valorDesconto}
+              onChange={(e) => setValorDesconto(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="0,00"
+            />
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-2">
+            <div className="flex justify-between text-sm mb-1 text-slate-600">
+              <span>Valor Original:</span>
+              <span>{lancamentoSelecionado ? formatCurrency(lancamentoSelecionado.valor) : 'R$ 0,00'}</span>
+            </div>
+            <div className="flex justify-between font-bold text-slate-800 mt-2 pt-2 border-t border-slate-200">
+              <span>Total Pago:</span>
+              <span className="text-primary">
+                {lancamentoSelecionado ? formatCurrency(lancamentoSelecionado.valor + (Number(valorAcrescimo) || 0) - (Number(valorDesconto) || 0)) : 'R$ 0,00'}
+              </span>
+            </div>
+          </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
             <Button type="button" variant="ghost" onClick={() => setIsModalBaixaOpen(false)}>Cancelar</Button>
             <Button type="submit" className="!bg-success hover:!bg-success-dark !border-success" loading={isSubmitting}>Confirmar Baixa</Button>

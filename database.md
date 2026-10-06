@@ -138,6 +138,8 @@ CREATE TABLE lancamentos (
   chave_acesso text,
   numero_documento text,
   valor numeric NOT NULL,
+  valor_acrescimo numeric DEFAULT 0,
+  valor_desconto numeric DEFAULT 0,
   data_competencia date NOT NULL,
   data_vencimento date,
   data_pagamento date,
@@ -198,7 +200,7 @@ CREATE TABLE push_subscriptions (
 -- Convites de Equipe
 CREATE TABLE convites_equipe (
   id uuid default uuid_generate_v4() primary key,
-  empresa_id uuid references empresas(id) not null,
+  grupo_id uuid references grupos_economicos(id) ON DELETE CASCADE not null,
   email text not null,
   perfil_id uuid references perfis_usuario(id) not null,
   token uuid default uuid_generate_v4() not null unique,

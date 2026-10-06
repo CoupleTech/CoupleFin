@@ -28,6 +28,8 @@ interface Lancamento {
   tipo: string
   subtipo: string
   valor: number
+  valor_acrescimo?: number
+  valor_desconto?: number
   data_competencia: string
   data_vencimento: string | null
   data_pagamento: string | null
@@ -59,6 +61,8 @@ export default function Financeiro() {
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null)
   
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [valorAcrescimo, setValorAcrescimo] = useState<number | ''>('')
+  const [valorDesconto, setValorDesconto] = useState<number | ''>('')
   const [motivoEstorno, setMotivoEstorno] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -127,8 +131,8 @@ export default function Financeiro() {
   } = usePagination(lancamentosFiltrados)
 
   // Resumos
-  const totalAtrasado = lancamentosFiltrados.filter(l => l.status_pagamento === 'atrasado').reduce((acc, l) => acc + l.valor, 0)
-  const totalPendente = lancamentosFiltrados.filter(l => l.status_pagamento === 'pendente').reduce((acc, l) => acc + l.valor, 0)
+  const totalAtrasado = lancamentosFiltrados.filter(l => l.status_pagamento === 'atrasado' && l.status !== 'estornado').reduce((acc, l) => acc + l.valor, 0)
+  const totalPendente = lancamentosFiltrados.filter(l => l.status_pagamento === 'pendente' && l.status !== 'estornado').reduce((acc, l) => acc + l.valor, 0)
   const totalPago = lancamentosFiltrados.filter(l => l.status_pagamento === 'pago' && l.status !== 'estornado').reduce((acc, l) => acc + l.valor, 0)
 
   // Handlers de Ações
@@ -149,7 +153,9 @@ export default function Financeiro() {
     const { error } = await supabase.from('lancamentos')
       .update({ 
         status_pagamento: 'pago', 
-        data_pagamento: dataBaixa 
+        data_pagamento: dataBaixa,
+        valor_acrescimo: Number(valorAcrescimo) || 0,
+        valor_desconto: Number(valorDesconto) || 0
       })
       .eq('id', lancamentoSelecionado.id)
 
@@ -209,9 +215,46 @@ export default function Financeiro() {
     carregarDados()
   }
 
+  const handleDesfazerBaixa = async (lanc: Lancamento) => {
+    if (!user || !empresaAtivaId) return
+
+    const fechado = await isPeriodoFechado(empresaAtivaId, lanc.data_competencia)
+    if (fechado) {
+      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível desfazer o pagamento.")
+      return
+    }
+
+    const { error } = await supabase.from('lancamentos')
+      .update({ 
+        status_pagamento: 'pendente', 
+        data_pagamento: null,
+        valor_acrescimo: 0,
+        valor_desconto: 0
+      })
+      .eq('id', lanc.id)
+
+    if (!error) {
+      await supabase.from('historico_alteracoes').insert([{
+        tabela: 'lancamentos',
+        registro_id: lanc.id,
+        usuario_id: user.id,
+        campo_alterado: 'status_pagamento',
+        valor_anterior: 'pago',
+        valor_novo: 'pendente',
+        acao: 'edicao'
+      }])
+      toast.success("Pagamento desfeito com sucesso!")
+      carregarDados()
+    } else {
+      toast.error("Erro ao desfazer pagamento.")
+    }
+  }
+
   const openBaixa = (l: Lancamento) => {
     setLancamentoSelecionado(l)
     setDataBaixa(format(new Date(), 'yyyy-MM-dd'))
+    setValorAcrescimo('')
+    setValorDesconto('')
     setIsModalBaixaOpen(true)
   }
 
@@ -426,12 +469,22 @@ export default function Financeiro() {
                                   icon={<CheckCircle className="w-4 h-4" />}
                                 />
                               )}
+                              {isPago && !isEstornado && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDesfazerBaixa(lanc)}
+                                  title="Desfazer Pagamento"
+                                  className="!text-warning hover:!bg-warning/10"
+                                  icon={<Clock className="w-4 h-4" />}
+                                />
+                              )}
                               {!isEstornado && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => openEstorno(lanc)}
-                                  title="Estornar"
+                                  title="Excluir Lançamento"
                                   className="!text-slate-400 hover:!text-danger hover:!bg-danger-50"
                                   icon={<Ban className="w-4 h-4" />}
                                 />
@@ -484,6 +537,40 @@ export default function Financeiro() {
             value={dataBaixa}
             onChange={(e) => setDataBaixa(e.target.value)}
           />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Acréscimos (Juros/Multa)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={valorAcrescimo}
+              onChange={(e) => setValorAcrescimo(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="0,00"
+            />
+            <Input
+              label="Descontos (Abatimento)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={valorDesconto}
+              onChange={(e) => setValorDesconto(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="0,00"
+            />
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mt-2">
+            <div className="flex justify-between text-sm mb-1 text-slate-600">
+              <span>Valor Original:</span>
+              <span>{lancamentoSelecionado ? formatCurrency(lancamentoSelecionado.valor) : 'R$ 0,00'}</span>
+            </div>
+            <div className="flex justify-between font-bold text-slate-800 mt-2 pt-2 border-t border-slate-200">
+              <span>Total Pago:</span>
+              <span className="text-primary">
+                {lancamentoSelecionado ? formatCurrency(lancamentoSelecionado.valor + (Number(valorAcrescimo) || 0) - (Number(valorDesconto) || 0)) : 'R$ 0,00'}
+              </span>
+            </div>
+          </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
             <Button type="button" variant="ghost" onClick={() => setIsModalBaixaOpen(false)}>Cancelar</Button>
             <Button type="submit" className="!bg-success hover:!bg-success-dark !border-success" loading={isSubmitting}>Confirmar Baixa</Button>
@@ -495,23 +582,23 @@ export default function Financeiro() {
       <Modal
         isOpen={isModalEstornoOpen}
         onClose={() => setIsModalEstornoOpen(false)}
-        title="Estornar Lançamento"
-        subtitle="Atenção: O lançamento será invalidado. É obrigatório informar o motivo."
+        title="Excluir Lançamento"
+        subtitle="Atenção: O lançamento será cancelado logicamente do sistema. É obrigatório informar o motivo."
         icon={<Ban className="w-5 h-5 text-danger" />}
         size="sm"
       >
         <form onSubmit={handleEstorno} className="space-y-4">
           <Input
-            label="Motivo do Estorno"
+            label="Motivo da Exclusão"
             type="text"
             required
-            placeholder="Ex: Lançamento duplicado, valor incorreto..."
+            placeholder="Ex: Lançamento duplicado, cancelado..."
             value={motivoEstorno}
             onChange={(e) => setMotivoEstorno(e.target.value)}
           />
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
             <Button type="button" variant="ghost" onClick={() => setIsModalEstornoOpen(false)}>Cancelar</Button>
-            <Button type="submit" className="!bg-danger hover:!bg-danger-dark !border-danger" loading={isSubmitting}>Estornar</Button>
+            <Button type="submit" className="!bg-danger hover:!bg-danger-dark !border-danger" loading={isSubmitting}>Excluir</Button>
           </div>
         </form>
       </Modal>

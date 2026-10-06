@@ -251,3 +251,65 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 - [x] 4. Execução Passo 3: Políticas RLS
 - [x] 5. Execução Passo 4: Frontend
 - [x] 6. Testes Finais e Release
+
+---
+
+### Fase 13: Correção de Bugs - Visibilidade de Usuários e Convite (EM ANDAMENTO)
+**Objetivo:** Corrigir dois bugs críticos reportados após a Fase 12:
+1. Usuários convidados não aparecem na tela de Equipe.
+2. Usuários convidados não conseguem cadastrar fornecedores e outros dados.
+
+**Root Cause Identificada:**
+- **Bug 1 (Equipe):** A política RLS da tabela `usuarios` só permitia que cada usuário lesse o próprio registro (`id = auth.uid()`). Com o sistema multi-tenant por grupo, precisamos que todos os membros do mesmo grupo se vejam.
+- **Bug 2 (Cadastros):** A RPC `aceitar_convite_usuario` pode não ter sido aplicada corretamente no Supabase após a Fase 12, ou os usuários já convidados antes da migração ficaram sem registro em `usuarios_grupos`. Sem esse registro, TODAS as políticas RLS das tabelas operacionais bloqueiam o acesso.
+- **Bug 3 (Nome):** O trigger `on_auth_user_created` insere nome padrão 'Usuário'. A RPC agora sobrescreve com o nome real dos metadados do Auth.
+
+**Tarefas:**
+- [x] 1. Diagnóstico dos dois bugs.
+- [x] 2. Criar script SQL `09_fix_usuarios_visibilidade_e_convite.sql`.
+- [ ] 3. Executar o script no Supabase (SQL Editor).
+- [ ] 4. Validar com os usuários convidados.
+- [ ] 5. Release.
+
+*Pipeline de Execução:*
+- [x] 1. Diagnóstico
+- [x] 2. Script SQL criado
+- [ ] 3. Execução no Supabase
+- [ ] 4. Validação
+- [ ] 5. Release
+
+---
+
+### Fase 14: Acréscimos e Descontos em Pagamentos (EM ANDAMENTO)
+**Objetivo:** Permitir registrar valores de juros/multas (acréscimos) e abatimentos (descontos) no momento da baixa de lançamentos, mantendo o valor original intacto e somando ao valor efetivamente pago.
+
+**Tarefas Planejadas:**
+- [x] 1. **Documentação e Banco de Dados:** Adicionar colunas `valor_acrescimo` e `valor_desconto` em `lancamentos`. Atualizar `database.md` e `documentacao.md`.
+- [x] 2. **Migration SQL:** Criar e executar script `10_add_acrescimos_descontos_lancamentos.sql`.
+- [x] 3. **Frontend (Tipagem):** Atualizar as tipagens do Supabase no Frontend (tipos dos lançamentos).
+- [x] 4. **Frontend (UI):** Ajustar o modal de baixa de lançamentos e listagem para permitir a inclusão e visualização de acréscimos e descontos.
+- [ ] 5. **Release Decision.**
+
+*Pipeline de Execução:*
+- [x] 1. Planejamento (Atual)
+- [x] 2. Script SQL criado
+- [ ] 3. Execução no Supabase
+- [x] 4. Ajustes de Interface
+- [ ] 5. Release
+
+---
+
+### Fase 15: Desfazer Baixa e Exclusão Lógica (EM ANDAMENTO)
+**Objetivo:** Implementar botão de "Desfazer Pagamento" para reverter baixas incorretas, e renomear o botão "Estornar" para "Excluir", funcionando como uma exclusão lógica sem deletar os rastros do banco.
+
+**Tarefas Planejadas:**
+- [x] 1. **Financeiro (UI):** Adicionar botão "Desfazer Pagamento" que retorna o status_pagamento para 'pendente' e limpa valores agregados de pagamento.
+- [x] 2. **Financeiro (UI):** Renomear a interface de estorno para "Excluir / Cancelar Lançamento".
+- [x] 3. **Auditoria:** Garantir que ambas as ações gerem registros de log no banco.
+- [ ] 4. **Release Decision.**
+
+*Pipeline de Execução:*
+- [x] 1. Planejamento
+- [x] 2. Implementação e Refatoração UI
+- [x] 3. Validação
+- [ ] 4. Release
