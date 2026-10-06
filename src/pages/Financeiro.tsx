@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   Clock,
   CheckCircle,
-  Ban
+  Ban,
+  Pencil
 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
@@ -57,6 +58,7 @@ export default function Financeiro() {
   // Ações
   const [isModalBaixaOpen, setIsModalBaixaOpen] = useState(false)
   const [isModalEstornoOpen, setIsModalEstornoOpen] = useState(false)
+  const [isModalEditarValorOpen, setIsModalEditarValorOpen] = useState(false)
   const [isModalDetalhesOpen, setIsModalDetalhesOpen] = useState(false)
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null)
   
@@ -64,6 +66,7 @@ export default function Financeiro() {
   const [valorAcrescimo, setValorAcrescimo] = useState<number | ''>('')
   const [valorDesconto, setValorDesconto] = useState<number | ''>('')
   const [motivoEstorno, setMotivoEstorno] = useState('')
+  const [novoValor, setNovoValor] = useState<number | ''>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -262,6 +265,49 @@ export default function Financeiro() {
     setLancamentoSelecionado(l)
     setMotivoEstorno('')
     setIsModalEstornoOpen(true)
+  }
+
+  const handleEditarValor = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!lancamentoSelecionado || !user || !empresaAtivaId || novoValor === '' || Number(novoValor) <= 0) return
+    setIsSubmitting(true)
+
+    const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
+    if (fechado) {
+      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seu valor.")
+      setIsSubmitting(false)
+      setIsModalEditarValorOpen(false)
+      return
+    }
+
+    const { error } = await supabase.from('lancamentos')
+      .update({ valor: Number(novoValor) })
+      .eq('id', lancamentoSelecionado.id)
+
+    if (!error) {
+      await supabase.from('historico_alteracoes').insert([{
+        tabela: 'lancamentos',
+        registro_id: lancamentoSelecionado.id,
+        usuario_id: user.id,
+        campo_alterado: 'valor',
+        valor_anterior: String(lancamentoSelecionado.valor),
+        valor_novo: String(novoValor),
+        acao: 'edicao'
+      }])
+      toast.success("Valor atualizado com sucesso!")
+    } else {
+      toast.error("Erro ao atualizar valor.")
+    }
+
+    setIsSubmitting(false)
+    setIsModalEditarValorOpen(false)
+    carregarDados()
+  }
+
+  const openEditarValor = (l: Lancamento) => {
+    setLancamentoSelecionado(l)
+    setNovoValor(l.valor)
+    setIsModalEditarValorOpen(true)
   }
 
   return (
@@ -463,6 +509,16 @@ export default function Financeiro() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  onClick={() => openEditarValor(lanc)}
+                                  title="Editar Valor"
+                                  className="!text-blue-500 hover:!bg-blue-50"
+                                  icon={<Pencil className="w-4 h-4" />}
+                                />
+                              )}
+                              {!isPago && !isEstornado && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => openBaixa(lanc)}
                                   title="Baixar Lançamento"
                                   className="!text-success hover:!bg-success/10"
@@ -599,6 +655,32 @@ export default function Financeiro() {
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
             <Button type="button" variant="ghost" onClick={() => setIsModalEstornoOpen(false)}>Cancelar</Button>
             <Button type="submit" className="!bg-danger hover:!bg-danger-dark !border-danger" loading={isSubmitting}>Excluir</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL DE EDITAR VALOR */}
+      <Modal
+        isOpen={isModalEditarValorOpen}
+        onClose={() => setIsModalEditarValorOpen(false)}
+        title="Editar Valor do Lançamento"
+        subtitle="O valor original será atualizado e o histórico manterá o registro desta alteração."
+        icon={<Pencil className="w-5 h-5 text-blue-500" />}
+        size="sm"
+      >
+        <form onSubmit={handleEditarValor} className="space-y-4">
+          <Input
+            label="Novo Valor (R$)"
+            type="number"
+            required
+            min="0.01"
+            step="0.01"
+            value={novoValor}
+            onChange={(e) => setNovoValor(e.target.value === '' ? '' : Number(e.target.value))}
+          />
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+            <Button type="button" variant="ghost" onClick={() => setIsModalEditarValorOpen(false)}>Cancelar</Button>
+            <Button type="submit" loading={isSubmitting}>Salvar</Button>
           </div>
         </form>
       </Modal>
