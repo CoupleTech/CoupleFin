@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, Select, PageHeader, Toggle } from '../components/ui'
-import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X, Camera } from 'lucide-react'
+import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X, Camera, Network, CalendarDays } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
 import { isPeriodoFechado } from '../lib/gatekeeper'
 import { Html5QrcodeScanner } from 'html5-qrcode'
-import { format } from 'date-fns'
+import { format, addMonths } from 'date-fns'
 import { toast } from '../store/useToastStore'
 
 const tiposLancamento = [
@@ -83,6 +83,45 @@ export default function NovoLancamento() {
   // Rateio
   const [isRateio, setIsRateio] = useState(false)
   const [empresasRateio, setEmpresasRateio] = useState<string[]>([])
+
+  // Parcelamento
+  interface Parcela {
+    numero: number
+    valor: string
+    data_vencimento: string
+  }
+  const [isParcelado, setIsParcelado] = useState(false)
+  const [qtdParcelas, setQtdParcelas] = useState<number | ''>(2)
+  const [parcelas, setParcelas] = useState<Parcela[]>([])
+
+  const gerarParcelasIniciais = (qtd: number, valorTotal: number, dataInicial: string) => {
+    if (!qtd || qtd <= 0) return
+    const parcelasIniciais: Parcela[] = []
+    
+    const valorBase = Math.floor((valorTotal / qtd) * 100) / 100
+    const diferenca = valorTotal - (valorBase * qtd)
+    
+    let currentData = new Date(dataInicial + 'T12:00:00')
+    
+    for (let i = 1; i <= qtd; i++) {
+      let v = valorBase
+      if (i === qtd) {
+        v += diferenca
+      }
+      
+      parcelasIniciais.push({
+        numero: i,
+        valor: v.toFixed(2),
+        data_vencimento: format(currentData, 'yyyy-MM-dd')
+      })
+      currentData = addMonths(currentData, 1)
+    }
+    setParcelas(parcelasIniciais)
+  }
+
+  const somaParcelas = parcelas.reduce((acc, p) => acc + (parseFloat(p.valor) || 0), 0)
+  const diferencaSaldo = (parseFloat(formData.valor) || 0) - somaParcelas
+  const isSaldoZerado = Math.abs(diferencaSaldo) < 0.01
 
   useEffect(() => {
     if (empresaAtivaId && grupo_id) {
@@ -164,11 +203,18 @@ export default function NovoLancamento() {
       return
     }
 
+    if (isParcelado && !isSaldoZerado) {
+      toast.error("O valor das parcelas não bate com o valor total. Verifique o saldo.")
+      setIsSubmitting(false)
+      return
+    }
+
     const arrayEmpresas = isRateio && empresasRateio.length > 0 && formData.subtipo !== 'transferencia_empresa' && formData.subtipo !== 'transferencia_conta' ? empresasRateio : [empresaAtivaId]
     const valorTotal = parseFloat(formData.valor) || 0
     const valorUnitario = valorTotal / arrayEmpresas.length
     
     let idsCriados: string[] = []
+    const payloadsToInsert: any[] = []
     
     // Obter nomes originais para tentar match nas outras empresas
     const nomeTD = formData.tipo_despesa_id ? tiposDespesa.find(t => t.id === formData.tipo_despesa_id)?.nome : null
@@ -192,43 +238,71 @@ export default function NovoLancamento() {
         }
       }
 
-      const payload = {
-        empresa_id: empId,
-        tipo: formData.tipo,
-        subtipo: formData.subtipo,
-        valor: valorUnitario,
-        descricao: arrayEmpresas.length > 1 ? `${formData.descricao} (Rateio)` : formData.descricao,
-        data_competencia: formData.data_competencia,
-        data_vencimento: formData.data_vencimento || null,
-        data_pagamento: (formData.ja_pago && formData.data_pagamento && empId === empresaAtivaId) ? formData.data_pagamento : null,
-        status_pagamento: (formData.ja_pago && empId === empresaAtivaId) ? 'pago' : 'pendente',
-        
-        // Relacionamentos básicos
-        centro_custo_id: targetCC,
-        tipo_despesa_id: targetTD,
-        conta_id: empId === empresaAtivaId ? (formData.conta_id || null) : null,
-        
-        // Opcionais/Condicionais
-        fornecedor_id: formData.fornecedor_id || null,
-        destino_pagamento_id: empId === empresaAtivaId ? (formData.destino_pagamento_id || null) : null,
-        chave_acesso: formData.tipo === 'nota_fiscal' ? formData.chave_acesso : null,
-        numero_documento: formData.tipo === 'nota_fiscal' ? formData.numero_documento : null,
-        
-        // Transferências
-        empresa_origem_id: formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null,
-        empresa_destino_id: formData.subtipo === 'transferencia_empresa' ? formData.empresa_destino_id : null,
-        conta_origem_id: formData.subtipo === 'transferencia_conta' ? formData.conta_id : null,
-        conta_destino_id: formData.subtipo === 'transferencia_conta' ? formData.conta_destino_id : null,
-      }
+      const rateioSuffix = arrayEmpresas.length > 1 ? ` (Rateio)` : ``
 
-      const { data: lancamento, error } = await supabase.from('lancamentos').insert([payload]).select().single()
-      
-      if (error) {
-        toast.error(`Erro ao salvar rateio na empresa (${empId}): ` + error.message)
-      } else if (lancamento) {
-        idsCriados.push(lancamento.id)
+      if (isParcelado && parcelas.length > 0) {
+        for (const p of parcelas) {
+          const valorRateado = parseFloat(p.valor) / arrayEmpresas.length
+          const descFinal = `${formData.descricao} (Parc ${p.numero}/${parcelas.length})${rateioSuffix}`
+          
+          payloadsToInsert.push({
+            empresa_id: empId,
+            tipo: formData.tipo,
+            subtipo: formData.subtipo,
+            valor: valorRateado,
+            descricao: descFinal,
+            data_competencia: p.data_vencimento, // Competência alinhada ao mês do vencimento da parcela
+            data_vencimento: p.data_vencimento,
+            data_pagamento: null,
+            status_pagamento: 'pendente', // Parcelas sempre nascem pendentes
+            centro_custo_id: targetCC,
+            tipo_despesa_id: targetTD,
+            conta_id: empId === empresaAtivaId ? (formData.conta_id || null) : null,
+            fornecedor_id: formData.fornecedor_id || null,
+            destino_pagamento_id: empId === empresaAtivaId ? (formData.destino_pagamento_id || null) : null,
+            chave_acesso: formData.tipo === 'nota_fiscal' ? formData.chave_acesso : null,
+            numero_documento: formData.tipo === 'nota_fiscal' ? formData.numero_documento : null,
+            empresa_origem_id: formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null,
+            empresa_destino_id: formData.subtipo === 'transferencia_empresa' ? formData.empresa_destino_id : null,
+            conta_origem_id: formData.subtipo === 'transferencia_conta' ? formData.conta_id : null,
+            conta_destino_id: formData.subtipo === 'transferencia_conta' ? formData.conta_destino_id : null,
+          })
+        }
+      } else {
+        payloadsToInsert.push({
+          empresa_id: empId,
+          tipo: formData.tipo,
+          subtipo: formData.subtipo,
+          valor: valorUnitario,
+          descricao: `${formData.descricao}${rateioSuffix}`,
+          data_competencia: formData.data_competencia,
+          data_vencimento: formData.data_vencimento || null,
+          data_pagamento: (formData.ja_pago && formData.data_pagamento && empId === empresaAtivaId) ? formData.data_pagamento : null,
+          status_pagamento: (formData.ja_pago && empId === empresaAtivaId) ? 'pago' : 'pendente',
+          centro_custo_id: targetCC,
+          tipo_despesa_id: targetTD,
+          conta_id: empId === empresaAtivaId ? (formData.conta_id || null) : null,
+          fornecedor_id: formData.fornecedor_id || null,
+          destino_pagamento_id: empId === empresaAtivaId ? (formData.destino_pagamento_id || null) : null,
+          chave_acesso: formData.tipo === 'nota_fiscal' ? formData.chave_acesso : null,
+          numero_documento: formData.tipo === 'nota_fiscal' ? formData.numero_documento : null,
+          empresa_origem_id: formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null,
+          empresa_destino_id: formData.subtipo === 'transferencia_empresa' ? formData.empresa_destino_id : null,
+          conta_origem_id: formData.subtipo === 'transferencia_conta' ? formData.conta_id : null,
+          conta_destino_id: formData.subtipo === 'transferencia_conta' ? formData.conta_destino_id : null,
+        })
       }
     }
+
+    const { data: lancamentosInseridos, error } = await supabase.from('lancamentos').insert(payloadsToInsert).select('id')
+    
+    if (error) {
+      toast.error(`Erro ao salvar lançamentos: ` + error.message)
+      setIsSubmitting(false)
+      return
+    }
+    
+    idsCriados = lancamentosInseridos?.map(l => l.id) || []
 
     // 2. Upload de Anexos se houver
     if (idsCriados.length > 0 && arquivos.length > 0) {
@@ -447,6 +521,94 @@ export default function NovoLancamento() {
                       )}
                     </div>
                   )}
+
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-3">
+                    <Toggle
+                      checked={isParcelado}
+                      onChange={(v) => {
+                        setIsParcelado(v)
+                        if (v && formData.valor && formData.data_vencimento) {
+                          gerarParcelasIniciais(Number(qtdParcelas) || 2, parseFloat(formData.valor), formData.data_vencimento)
+                        }
+                      }}
+                      label={<span className="text-sm font-medium text-slate-700 flex items-center gap-1.5"><CalendarDays className="w-4 h-4 text-primary" /> Pagamento Parcelado / Acordo?</span>}
+                    />
+                    
+                    {isParcelado && (
+                      <div className="mt-3 pt-3 border-t border-slate-200">
+                        <div className="flex gap-4 items-end mb-4">
+                          <div className="w-1/3">
+                            <Input
+                              label="Nº de Parcelas"
+                              type="number"
+                              min="2"
+                              max="120"
+                              value={qtdParcelas}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                setQtdParcelas(val === '' ? '' : Number(val))
+                              }}
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="secondary"
+                            onClick={() => gerarParcelasIniciais(Number(qtdParcelas) || 2, parseFloat(formData.valor) || 0, formData.data_vencimento)}
+                          >
+                            Gerar Parcelas
+                          </Button>
+                        </div>
+                        
+                        {parcelas.length > 0 && (
+                          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            {parcelas.map((p, idx) => (
+                              <div key={idx} className="flex gap-3 items-center bg-white p-2 rounded border border-slate-200">
+                                <div className="w-16 text-center text-sm font-semibold text-slate-500 bg-slate-100 py-1 rounded">
+                                  {p.numero}/{parcelas.length}
+                                </div>
+                                <div className="flex-1">
+                                  <Input
+                                    type="date"
+                                    value={p.data_vencimento}
+                                    onChange={(e) => {
+                                      const nova = [...parcelas]
+                                      nova[idx].data_vencimento = e.target.value
+                                      setParcelas(nova)
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={p.valor}
+                                    onChange={(e) => {
+                                      const nova = [...parcelas]
+                                      nova[idx].valor = e.target.value
+                                      setParcelas(nova)
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {parcelas.length > 0 && (
+                          <div className={`mt-3 p-3 rounded text-sm text-center font-medium border ${isSaldoZerado ? 'bg-success-50 text-success-700 border-success-200' : 'bg-danger-50 text-danger-700 border-danger-200'}`}>
+                            <div className="flex justify-between items-center px-2">
+                              <span>Total das Parcelas: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(somaParcelas)}</span>
+                              {isSaldoZerado ? (
+                                <span>✅ Saldo Zerado</span>
+                              ) : (
+                                <span>Diferença: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(diferencaSaldo)}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Input
                   label="Descrição / Referência"
