@@ -16,7 +16,8 @@ import {
   Clock,
   CheckCircle,
   Ban,
-  Pencil
+  Pencil,
+  Trash2
 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
@@ -58,6 +59,7 @@ export default function Financeiro() {
   // Ações
   const [isModalBaixaOpen, setIsModalBaixaOpen] = useState(false)
   const [isModalEstornoOpen, setIsModalEstornoOpen] = useState(false)
+  const [isModalExcluirDefinitivoOpen, setIsModalExcluirDefinitivoOpen] = useState(false)
   const [isModalEditarValorOpen, setIsModalEditarValorOpen] = useState(false)
   const [isModalDetalhesOpen, setIsModalDetalhesOpen] = useState(false)
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null)
@@ -215,6 +217,29 @@ export default function Financeiro() {
 
     setIsSubmitting(false)
     setIsModalEstornoOpen(false)
+    carregarDados()
+  }
+
+  const handleExcluirDefinitivo = async () => {
+    if (!lancamentoSelecionado || !user || !empresaAtivaId) return
+    setIsSubmitting(true)
+
+    // Remover historico primeiro
+    await supabase.from('historico_alteracoes').delete().eq('registro_id', lancamentoSelecionado.id)
+    
+    // Apagar lancamento
+    const { error } = await supabase.from('lancamentos')
+      .delete()
+      .eq('id', lancamentoSelecionado.id)
+
+    if (!error) {
+      toast.success("Lançamento apagado definitivamente!")
+    } else {
+      toast.error("Erro ao apagar lançamento.")
+    }
+
+    setIsSubmitting(false)
+    setIsModalExcluirDefinitivoOpen(false)
     carregarDados()
   }
 
@@ -545,6 +570,19 @@ export default function Financeiro() {
                                   icon={<Ban className="w-4 h-4" />}
                                 />
                               )}
+                              {isEstornado && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setLancamentoSelecionado(lanc)
+                                    setIsModalExcluirDefinitivoOpen(true)
+                                  }}
+                                  title="Excluir Definitivamente"
+                                  className="!text-slate-400 hover:!text-danger hover:!bg-danger-50"
+                                  icon={<Trash2 className="w-4 h-4" />}
+                                />
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -657,6 +695,21 @@ export default function Financeiro() {
             <Button type="submit" className="!bg-danger hover:!bg-danger-dark !border-danger" loading={isSubmitting}>Excluir</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* MODAL DE EXCLUSÃO DEFINITIVA */}
+      <Modal
+        isOpen={isModalExcluirDefinitivoOpen}
+        onClose={() => setIsModalExcluirDefinitivoOpen(false)}
+        title="Excluir Definitivamente"
+        subtitle="ATENÇÃO: Esta ação apagará fisicamente o lançamento e seu histórico. Não pode ser desfeita."
+        icon={<Trash2 className="w-5 h-5 text-danger" />}
+        size="sm"
+      >
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+          <Button type="button" variant="ghost" onClick={() => setIsModalExcluirDefinitivoOpen(false)}>Cancelar</Button>
+          <Button type="button" onClick={handleExcluirDefinitivo} className="!bg-danger hover:!bg-danger-dark !border-danger" loading={isSubmitting}>Sim, Apagar Tudo</Button>
+        </div>
       </Modal>
 
       {/* MODAL DE EDITAR VALOR */}
