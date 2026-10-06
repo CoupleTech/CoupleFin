@@ -69,6 +69,7 @@ export default function Financeiro() {
   const [valorDesconto, setValorDesconto] = useState<number | ''>('')
   const [motivoEstorno, setMotivoEstorno] = useState('')
   const [novoValor, setNovoValor] = useState<number | ''>('')
+  const [novaDataVencimento, setNovaDataVencimento] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -292,36 +293,60 @@ export default function Financeiro() {
     setIsModalEstornoOpen(true)
   }
 
-  const handleEditarValor = async (e: React.FormEvent) => {
+  const handleEditarLancamento = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!lancamentoSelecionado || !user || !empresaAtivaId || novoValor === '' || Number(novoValor) <= 0) return
+    if (!lancamentoSelecionado || !user || !empresaAtivaId || novoValor === '' || Number(novoValor) <= 0 || !novaDataVencimento) return
     setIsSubmitting(true)
 
     const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
     if (fechado) {
-      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seu valor.")
+      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seus dados.")
       setIsSubmitting(false)
       setIsModalEditarValorOpen(false)
       return
     }
 
     const { error } = await supabase.from('lancamentos')
-      .update({ valor: Number(novoValor) })
+      .update({ 
+        valor: Number(novoValor),
+        data_vencimento: novaDataVencimento
+      })
       .eq('id', lancamentoSelecionado.id)
 
     if (!error) {
-      await supabase.from('historico_alteracoes').insert([{
-        tabela: 'lancamentos',
-        registro_id: lancamentoSelecionado.id,
-        usuario_id: user.id,
-        campo_alterado: 'valor',
-        valor_anterior: String(lancamentoSelecionado.valor),
-        valor_novo: String(novoValor),
-        acao: 'edicao'
-      }])
-      toast.success("Valor atualizado com sucesso!")
+      const historicos = []
+      if (String(lancamentoSelecionado.valor) !== String(novoValor)) {
+        historicos.push({
+          tabela: 'lancamentos',
+          registro_id: lancamentoSelecionado.id,
+          usuario_id: user.id,
+          campo_alterado: 'valor',
+          valor_anterior: String(lancamentoSelecionado.valor),
+          valor_novo: String(novoValor),
+          acao: 'edicao'
+        })
+      }
+      
+      const vencimentoAtual = lancamentoSelecionado.data_vencimento || lancamentoSelecionado.data_competencia
+      if (vencimentoAtual !== novaDataVencimento) {
+        historicos.push({
+          tabela: 'lancamentos',
+          registro_id: lancamentoSelecionado.id,
+          usuario_id: user.id,
+          campo_alterado: 'data_vencimento',
+          valor_anterior: vencimentoAtual,
+          valor_novo: novaDataVencimento,
+          acao: 'edicao'
+        })
+      }
+
+      if (historicos.length > 0) {
+        await supabase.from('historico_alteracoes').insert(historicos)
+      }
+
+      toast.success("Lançamento atualizado com sucesso!")
     } else {
-      toast.error("Erro ao atualizar valor.")
+      toast.error("Erro ao atualizar lançamento.")
     }
 
     setIsSubmitting(false)
@@ -329,9 +354,10 @@ export default function Financeiro() {
     carregarDados()
   }
 
-  const openEditarValor = (l: Lancamento) => {
+  const openEditarLancamento = (l: Lancamento) => {
     setLancamentoSelecionado(l)
     setNovoValor(l.valor)
+    setNovaDataVencimento(l.data_vencimento || l.data_competencia)
     setIsModalEditarValorOpen(true)
   }
 
@@ -534,8 +560,8 @@ export default function Financeiro() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => openEditarValor(lanc)}
-                                  title="Editar Valor"
+                                  onClick={() => openEditarLancamento(lanc)}
+                                  title="Editar Lançamento"
                                   className="!text-blue-500 hover:!bg-blue-50"
                                   icon={<Pencil className="w-4 h-4" />}
                                 />
@@ -712,16 +738,23 @@ export default function Financeiro() {
         </div>
       </Modal>
 
-      {/* MODAL DE EDITAR VALOR */}
+      {/* MODAL DE EDITAR LANÇAMENTO */}
       <Modal
         isOpen={isModalEditarValorOpen}
         onClose={() => setIsModalEditarValorOpen(false)}
-        title="Editar Valor do Lançamento"
-        subtitle="O valor original será atualizado e o histórico manterá o registro desta alteração."
+        title="Editar Lançamento"
+        subtitle="Altere o valor ou a data de vencimento. O histórico manterá os registros das alterações."
         icon={<Pencil className="w-5 h-5 text-blue-500" />}
         size="sm"
       >
-        <form onSubmit={handleEditarValor} className="space-y-4">
+        <form onSubmit={handleEditarLancamento} className="space-y-4">
+          <Input
+            label="Data de Vencimento"
+            type="date"
+            required
+            value={novaDataVencimento}
+            onChange={(e) => setNovaDataVencimento(e.target.value)}
+          />
           <Input
             label="Novo Valor (R$)"
             type="number"
