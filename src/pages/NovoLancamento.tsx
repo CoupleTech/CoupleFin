@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, Select, PageHeader, Toggle } from '../components/ui'
-import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X, Camera, Network } from 'lucide-react'
+import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X, Camera } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
 import { isPeriodoFechado } from '../lib/gatekeeper'
@@ -411,7 +411,7 @@ export default function NovoLancamento() {
                       <Toggle
                         checked={isRateio}
                         onChange={setIsRateio}
-                        label={<span className="text-sm font-medium text-slate-700 flex items-center gap-1.5"><Network className="w-4 h-4 text-primary" /> Ratear entre Empresas?</span>}
+                        label="Ratear entre Empresas?"
                       />
                       
                       {isRateio && (
