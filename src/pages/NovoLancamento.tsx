@@ -7,7 +7,7 @@ import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X,
 import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
 import { isPeriodoFechado } from '../lib/gatekeeper'
-import { Html5Qrcode } from 'html5-qrcode'
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { format, addMonths } from 'date-fns'
 import { toast } from '../store/useToastStore'
 
@@ -169,12 +169,21 @@ export default function NovoLancamento() {
       html5QrCode.start(
         { facingMode: "environment" },
         {
-          fps: 10,
-          qrbox: { width: 300, height: 150 }
+          fps: 15,
+          qrbox: { width: 320, height: 120 },
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.QR_CODE
+          ],
+          useBarCodeDetectorIfSupported: true
         },
         (decodedText) => {
-          // Extrair 44 dígitos se houver URL
-          const match = decodedText.match(/\d{44}/)
+          // Remover tudo que não for número e tentar encontrar os 44 dígitos
+          const soNumeros = decodedText.replace(/\D/g, '')
+          const match = soNumeros.match(/\d{44}/)
+          
           if (match) {
             setFormData(prev => ({ ...prev, chave_acesso: match[0] }))
           } else {
