@@ -651,23 +651,23 @@ export default function NovoLancamento() {
                     )}
                   </div>
                 </div>
-                <Input
-                  label="Descrição / Referência"
-                  type="text"
-                  value={formData.descricao}
-                  onChange={(e) => setFormData({...formData, descricao: e.target.value})}
-                  placeholder="Ex: Compra de material, Pagamento de Internet..."
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex flex-col space-y-1">
-                  <label className="text-sm font-medium text-slate-700">Observações Internas (Opcional)</label>
-                  <textarea
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                    placeholder="Notas adicionais para a equipe ou auditoria..."
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[100px] resize-y text-sm"
+                <div className="flex flex-col gap-4">
+                  <Input
+                    label="Descrição / Referência"
+                    type="text"
+                    value={formData.descricao}
+                    onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                    placeholder="Ex: Compra de material, Pagamento de Internet..."
                   />
+                  <div className="flex flex-col space-y-1 flex-1">
+                    <label className="text-sm font-medium text-slate-700">Observações Internas (Opcional)</label>
+                    <textarea
+                      value={formData.observacoes}
+                      onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+                      placeholder="Notas adicionais para a equipe ou auditoria..."
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-y text-sm flex-1"
+                    />
+                  </div>
                 </div>
               </div>
 
