@@ -3,9 +3,10 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/layout/Layout'
 import { Button, Input, Select, Modal, EmptyState, PageHeader, Badge, Toggle, Pagination } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, Bookmark, Check, XCircle, Search } from 'lucide-react'
+import { Plus, Edit2, Trash2, Bookmark, Check, XCircle, Search, Ban } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { usePagination } from '../hooks/usePagination'
+import toast from 'react-hot-toast'
 
 interface TipoDespesa {
   id: string
@@ -33,6 +34,8 @@ export default function TiposDespesa() {
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalExcluirOpen, setIsModalExcluirOpen] = useState(false)
+  const [tipoParaExcluir, setTipoParaExcluir] = useState<TipoDespesa | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({ 
     id: '', 
@@ -129,11 +132,40 @@ export default function TiposDespesa() {
     carregarDados()
   }
 
-  const handleExcluir = async (id: string, nome: string) => {
-    if (confirm(`Deseja inativar o tipo de despesa "${nome}"? Ele deixará de aparecer nas opções de lançamento.`)) {
-      await supabase.from('tipo_despesa').update({ ativo: false }).eq('id', id)
-      carregarDados()
+  const handleToggleAtivo = async (id: string, ativoAtual: boolean) => {
+    await supabase.from('tipo_despesa').update({ ativo: !ativoAtual }).eq('id', id)
+    carregarDados()
+  }
+
+  const handleExcluirClick = (tipo: TipoDespesa) => {
+    setTipoParaExcluir(tipo)
+    setIsModalExcluirOpen(true)
+  }
+
+  const handleConfirmarExcluir = async () => {
+    if (!tipoParaExcluir) return
+    setIsSubmitting(true)
+    
+    const { count } = await supabase.from('lancamentos').select('*', { count: 'exact', head: true }).eq('tipo_despesa_id', tipoParaExcluir.id)
+    
+    if (count && count > 0) {
+       toast.error(`Existe lançamento atrelado ao tipo "${tipoParaExcluir.nome}". Não é possível excluir.`)
+       setIsSubmitting(false)
+       setIsModalExcluirOpen(false)
+       return
     }
+
+    const { error } = await supabase.from('tipo_despesa').delete().eq('id', tipoParaExcluir.id)
+    
+    if (error) {
+      toast.error('Erro ao excluir tipo.')
+    } else {
+      toast.success('Tipo excluído com sucesso!')
+    }
+    
+    setIsSubmitting(false)
+    setIsModalExcluirOpen(false)
+    carregarDados()
   }
 
   return (
@@ -234,16 +266,22 @@ export default function TiposDespesa() {
                             title="Editar"
                             icon={<Edit2 className="w-3.5 h-3.5" />}
                           />
-                          {tipo.ativo && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleExcluir(tipo.id, tipo.nome)}
-                              title="Inativar"
-                              className="!text-slate-400 hover:!text-danger hover:!bg-danger-50"
-                              icon={<Trash2 className="w-3.5 h-3.5" />}
-                            />
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleAtivo(tipo.id, tipo.ativo)}
+                            title={tipo.ativo ? "Inativar" : "Ativar"}
+                            className={tipo.ativo ? "!text-warning hover:!bg-warning-50" : "!text-success hover:!bg-success-50"}
+                            icon={tipo.ativo ? <Ban className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleExcluirClick(tipo)}
+                            title="Excluir"
+                            className="!text-slate-400 hover:!text-danger hover:!bg-danger-50"
+                            icon={<Trash2 className="w-3.5 h-3.5" />}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -271,15 +309,20 @@ export default function TiposDespesa() {
                         onClick={() => openModal(tipo)}
                         icon={<Edit2 className="w-3.5 h-3.5" />}
                       />
-                      {tipo.ativo && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleExcluir(tipo.id, tipo.nome)}
-                          className="!text-slate-400 hover:!text-danger hover:!bg-danger-50"
-                          icon={<Trash2 className="w-3.5 h-3.5" />}
-                        />
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleAtivo(tipo.id, tipo.ativo)}
+                        className={tipo.ativo ? "!text-warning hover:!bg-warning-50" : "!text-success hover:!bg-success-50"}
+                        icon={tipo.ativo ? <Ban className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleExcluirClick(tipo)}
+                        className="!text-slate-400 hover:!text-danger hover:!bg-danger-50"
+                        icon={<Trash2 className="w-3.5 h-3.5" />}
+                      />
                     </div>
                   </div>
                   <div className="mt-2 flex gap-2">
@@ -362,6 +405,24 @@ export default function TiposDespesa() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Confirmar Exclusão */}
+      <Modal
+        isOpen={isModalExcluirOpen}
+        onClose={() => setIsModalExcluirOpen(false)}
+        title="Excluir Tipo"
+        subtitle="Atenção: A exclusão apaga definitivamente este tipo de despesa/receita."
+        icon={<Trash2 className="w-5 h-5 text-danger" />}
+        size="sm"
+      >
+        <div className="pt-2 pb-4 text-sm text-slate-600">
+          Você tem certeza que deseja excluir <strong>{tipoParaExcluir?.nome}</strong>?
+        </div>
+        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+          <Button type="button" variant="ghost" onClick={() => setIsModalExcluirOpen(false)}>Cancelar</Button>
+          <Button type="button" onClick={handleConfirmarExcluir} className="!bg-danger hover:!bg-danger-dark !border-danger" loading={isSubmitting}>Sim, Excluir</Button>
+        </div>
       </Modal>
     </Layout>
   )
