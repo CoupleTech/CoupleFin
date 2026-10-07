@@ -71,7 +71,7 @@ export default function Financeiro() {
   
   // Catálogos
   const [fornecedores, setFornecedores] = useState<{id: string, razao_social: string}[]>([])
-  const [tiposDespesa, setTiposDespesa] = useState<{id: string, nome: string}[]>([])
+  const [tiposDespesa, setTiposDespesa] = useState<{id: string, nome: string, grupo_dre?: string}[]>([])
   const [centrosCusto, setCentrosCusto] = useState<{id: string, nome: string}[]>([])
   const [contas, setContas] = useState<{id: string, nome: string}[]>([])
   const [destinos, setDestinos] = useState<{id: string, nome: string}[]>([])
@@ -104,7 +104,7 @@ export default function Financeiro() {
   const carregarCatalogos = async () => {
     const [resCC, resTD, resForn, resContas, resDest] = await Promise.all([
       supabase.from('centro_custo').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome'),
-      supabase.from('tipo_despesa').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome'),
+      supabase.from('tipo_despesa').select('id, nome, grupo_dre').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome'),
       supabase.from('fornecedores').select('id, razao_social').eq('grupo_id', grupo_id).eq('ativo', true).order('razao_social'),
       supabase.from('contas').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome'),
       supabase.from('destinos_pagamento').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome')
@@ -864,7 +864,12 @@ export default function Financeiro() {
                   onChange={(e) => setEditForm(prev => ({ ...prev, tipo_despesa_id: e.target.value }))}
                   options={[
                     { value: '', label: 'Nenhuma' },
-                    ...tiposDespesa.map(t => ({ value: t.id, label: t.nome }))
+                    ...tiposDespesa.filter(td => {
+                      const g = td.grupo_dre?.toLowerCase() || ''
+                      const isDreReceita = g.includes('receita_bruta') || g === 'receitas' || g === 'receita'
+                      const isReceitaEdit = lancamentoSelecionado?.subtipo === 'receita' || lancamentoSelecionado?.subtipo === 'nf_receita'
+                      return isReceitaEdit ? isDreReceita : !isDreReceita
+                    }).map(t => ({ value: t.id, label: t.nome }))
                   ]}
                 />
                 <Select

@@ -48,7 +48,7 @@ export default function NovoLancamento() {
 
   // Catálogos
   const [centrosCusto, setCentrosCusto] = useState<{id: string, nome: string}[]>([])
-  const [tiposDespesa, setTiposDespesa] = useState<{id: string, nome: string}[]>([])
+  const [tiposDespesa, setTiposDespesa] = useState<{id: string, nome: string, grupo_dre?: string}[]>([])
   const [contas, setContas] = useState<{id: string, nome: string}[]>([])
   const [destinos, setDestinos] = useState<{id: string, nome: string}[]>([])
   const [fornecedores, setFornecedores] = useState<{id: string, razao_social: string}[]>([])
@@ -145,7 +145,7 @@ export default function NovoLancamento() {
     
     const [resCC, resTD, resContas, resDest, resForn] = await Promise.all([
       supabase.from('centro_custo').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true),
-      supabase.from('tipo_despesa').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true),
+      supabase.from('tipo_despesa').select('id, nome, grupo_dre').eq('empresa_id', empresaAtivaId).eq('ativo', true),
       supabase.from('contas').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true),
       supabase.from('destinos_pagamento').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true),
       supabase.from('fornecedores').select('id, razao_social').eq('grupo_id', grupo_id).eq('ativo', true)
@@ -390,7 +390,15 @@ export default function NovoLancamento() {
 
   // Helpers para opções dos selects
   const opsCC = [{ value: '', label: 'Selecione...' }, ...centrosCusto.map(c => ({ value: c.id, label: c.nome }))]
-  const opsTD = [{ value: '', label: 'Selecione...' }, ...tiposDespesa.map(c => ({ value: c.id, label: c.nome }))]
+  const isReceitaLaunch = formData.subtipo === 'receita' || formData.subtipo === 'nf_receita'
+  
+  const tiposFiltrados = tiposDespesa.filter(td => {
+    const g = td.grupo_dre?.toLowerCase() || ''
+    const isDreReceita = g.includes('receita_bruta') || g === 'receitas' || g === 'receita'
+    return isReceitaLaunch ? isDreReceita : !isDreReceita
+  })
+
+  const opsTD = [{ value: '', label: 'Selecione...' }, ...tiposFiltrados.map(c => ({ value: c.id, label: c.nome }))]
   const opsContas = [{ value: '', label: 'Selecione...' }, ...contas.map(c => ({ value: c.id, label: c.nome }))]
   const opsDestinos = [{ value: '', label: 'Selecione...' }, ...destinos.map(c => ({ value: c.id, label: c.nome }))]
   const opsForn = [{ value: '', label: 'Nenhum / Selecione...' }, ...fornecedores.map(c => ({ value: c.id, label: c.razao_social }))]

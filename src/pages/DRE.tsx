@@ -92,25 +92,23 @@ export default function DRE() {
     const gruposSoma: any = {}
 
     lancamentos.forEach(lanc => {
-      // Receitas geralmente não tem "tipo_despesa" na mesma lógica, ou se tiver, o grupo_dre dirá.
-      // Assumindo que subtipo entra como receita se o valor for positivo ou tipo for 'receita' (a definir)
-      // Como o sistema foca em despesas mas a DRE prevê receitas, vamos inferir pelo grupo_dre do tipo_despesa
       const grupoDre = lanc.tipo_despesa?.grupo_dre?.toLowerCase() || 'sem_grupo'
+      
       const valor = Number(lanc.valor) || 0
       
       if (!gruposSoma[grupoDre]) gruposSoma[grupoDre] = 0
       gruposSoma[grupoDre] += valor
     })
 
-    // Processa a DRE step-by-step
     ESTRUTURA_DRE.forEach(item => {
       if (item.tipo === 'positiva' || item.tipo === 'negativa') {
         let soma = 0
-        item.grupos?.forEach(g => {
-          // Busca parciais matching
-          Object.keys(gruposSoma).forEach(k => {
-            if (k.includes(g)) soma += gruposSoma[k]
-          })
+        Object.keys(gruposSoma).forEach(k => {
+          // Se o grupo da despesa (k) bater com algum dos grupos esperados (g), soma e para
+          const match = item.grupos?.some(g => k.includes(g))
+          if (match) {
+            soma += gruposSoma[k]
+          }
         })
         valores[item.id] = item.tipo === 'negativa' ? -soma : soma
       }
