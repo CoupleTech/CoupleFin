@@ -7,7 +7,7 @@ import { ArrowLeft, Save, Receipt, Calculator, Building, Landmark, Paperclip, X,
 import { useAppStore } from '../store/useAppStore'
 import imageCompression from 'browser-image-compression'
 import { isPeriodoFechado } from '../lib/gatekeeper'
-import { Html5QrcodeScanner } from 'html5-qrcode'
+import { Html5Qrcode } from 'html5-qrcode'
 import { format, addMonths } from 'date-fns'
 import { toast } from '../store/useToastStore'
 
@@ -161,14 +161,17 @@ export default function NovoLancamento() {
   }
 
   useEffect(() => {
-    if (isScanning) {
-      const scanner = new Html5QrcodeScanner(
-        "reader",
-        { fps: 10, qrbox: {width: 250, height: 250} },
-        /* verbose= */ false
-      )
+    let html5QrCode: Html5Qrcode | null = null;
 
-      scanner.render(
+    if (isScanning) {
+      html5QrCode = new Html5Qrcode("reader");
+      
+      html5QrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 300, height: 150 }
+        },
         (decodedText) => {
           // Extrair 44 dígitos se houver URL
           const match = decodedText.match(/\d{44}/)
@@ -177,16 +180,29 @@ export default function NovoLancamento() {
           } else {
             setFormData(prev => ({ ...prev, chave_acesso: decodedText }))
           }
-          scanner.clear()
-          setIsScanning(false)
+          
+          if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+              html5QrCode?.clear();
+              setIsScanning(false);
+            }).catch(console.error);
+          }
         },
         () => {
-          // ignore error
+          // ignora erros de leitura de frame
         }
-      )
+      ).catch((err) => {
+        console.error("Erro ao iniciar câmera", err);
+        toast.error("Não foi possível acessar a câmera do dispositivo.");
+        setIsScanning(false);
+      });
+    }
 
-      return () => {
-        scanner.clear().catch(console.error)
+    return () => {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => html5QrCode?.clear()).catch(console.error);
+      } else if (html5QrCode) {
+        html5QrCode.clear();
       }
     }
   }, [isScanning])
