@@ -40,12 +40,18 @@ interface Lancamento {
   descricao: string
   fornecedores?: { razao_social: string }
   centro_custo?: { nome: string }
-  tipo_despesa?: { nome: string, grupo_dre: string }
+  fornecedor_id?: string
+  centro_custo_id?: string
+  tipo_despesa_id?: string
+  conta_id?: string
+  destino_pagamento_id?: string
 }
 
 export default function Financeiro() {
   const navigate = useNavigate()
-  const { empresaAtivaId, user } = useAppStore()
+  const { empresaAtivaId, user, empresas } = useAppStore()
+  const empresaAtiva = empresas.find(e => e.id === empresaAtivaId)
+  const grupo_id = empresaAtiva?.grupo_id
   
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,18 +66,55 @@ export default function Financeiro() {
   const [isModalBaixaOpen, setIsModalBaixaOpen] = useState(false)
   const [isModalEstornoOpen, setIsModalEstornoOpen] = useState(false)
   const [isModalExcluirDefinitivoOpen, setIsModalExcluirDefinitivoOpen] = useState(false)
-  const [isModalEditarValorOpen, setIsModalEditarValorOpen] = useState(false)
   const [isModalDetalhesOpen, setIsModalDetalhesOpen] = useState(false)
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null)
+  
+  // Catálogos
+  const [fornecedores, setFornecedores] = useState<{id: string, razao_social: string}[]>([])
+  const [tiposDespesa, setTiposDespesa] = useState<{id: string, nome: string}[]>([])
+  const [centrosCusto, setCentrosCusto] = useState<{id: string, nome: string}[]>([])
+  const [contas, setContas] = useState<{id: string, nome: string}[]>([])
+  const [destinos, setDestinos] = useState<{id: string, nome: string}[]>([])
+
+  // Formulário Edição
+  const [editForm, setEditForm] = useState({
+    descricao: '',
+    valor: '',
+    data_competencia: '',
+    data_vencimento: '',
+    fornecedor_id: '',
+    tipo_despesa_id: '',
+    centro_custo_id: '',
+    conta_id: '',
+    destino_pagamento_id: ''
+  })
   
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [valorAcrescimo, setValorAcrescimo] = useState<number | ''>('')
   const [valorDesconto, setValorDesconto] = useState<number | ''>('')
   const [motivoEstorno, setMotivoEstorno] = useState('')
-  const [novoValor, setNovoValor] = useState<number | ''>('')
-  const [novaDataVencimento, setNovaDataVencimento] = useState('')
-  const [novaDescricao, setNovaDescricao] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (empresaAtivaId && grupo_id) {
+      carregarCatalogos()
+    }
+  }, [empresaAtivaId, grupo_id])
+
+  const carregarCatalogos = async () => {
+    const [resCC, resTD, resForn, resContas, resDest] = await Promise.all([
+      supabase.from('centro_custo').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome'),
+      supabase.from('tipo_despesa').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome'),
+      supabase.from('fornecedores').select('id, razao_social').eq('grupo_id', grupo_id).eq('ativo', true).order('razao_social'),
+      supabase.from('contas').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome'),
+      supabase.from('destinos_pagamento').select('id, nome').eq('empresa_id', empresaAtivaId).eq('ativo', true).order('nome')
+    ])
+    if (!resCC.error && resCC.data) setCentrosCusto(resCC.data)
+    if (!resTD.error && resTD.data) setTiposDespesa(resTD.data)
+    if (!resForn.error && resForn.data) setFornecedores(resForn.data)
+    if (!resContas.error && resContas.data) setContas(resContas.data)
+    if (!resDest.error && resDest.data) setDestinos(resDest.data)
+  }
 
   useEffect(() => {
     if (empresaAtivaId) {
@@ -294,93 +337,33 @@ export default function Financeiro() {
     setIsModalEstornoOpen(true)
   }
 
-  const handleEditarLancamento = async (e: React.FormEvent) => {
+  const handleSalvarDetalhes = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!lancamentoSelecionado || !user || !empresaAtivaId || novoValor === '' || Number(novoValor) <= 0 || !novaDataVencimento || !novaDescricao.trim()) return
-    setIsSubmitting(true)
-
-    const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
-    if (fechado) {
-      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterar seus dados.")
-      setIsSubmitting(false)
-      setIsModalEditarValorOpen(false)
-      return
-    }
-
-    const { error } = await supabase.from('lancamentos')
-      .update({ 
-        valor: Number(novoValor),
-        data_vencimento: novaDataVencimento,
-        descricao: novaDescricao.trim()
-      })
-      .eq('id', lancamentoSelecionado.id)
-
-    if (!error) {
-      const historicos = []
-      if (String(lancamentoSelecionado.valor) !== String(novoValor)) {
-        historicos.push({
-          tabela: 'lancamentos',
-          registro_id: lancamentoSelecionado.id,
-          usuario_id: user.id,
-          campo_alterado: 'valor',
-          valor_anterior: String(lancamentoSelecionado.valor),
-          valor_novo: String(novoValor),
-          acao: 'edicao'
-        })
-      }
-      
-      const vencimentoAtual = lancamentoSelecionado.data_vencimento || lancamentoSelecionado.data_competencia
-      if (vencimentoAtual !== novaDataVencimento) {
-        historicos.push({
-          tabela: 'lancamentos',
-          registro_id: lancamentoSelecionado.id,
-          usuario_id: user.id,
-          campo_alterado: 'data_vencimento',
-          valor_anterior: vencimentoAtual,
-          valor_novo: novaDataVencimento,
-          acao: 'edicao'
-        })
-      }
-
-      if (lancamentoSelecionado.descricao !== novaDescricao.trim()) {
-        historicos.push({
-          tabela: 'lancamentos',
-          registro_id: lancamentoSelecionado.id,
-          usuario_id: user.id,
-          campo_alterado: 'descricao',
-          valor_anterior: lancamentoSelecionado.descricao,
-          valor_novo: novaDescricao.trim(),
-          acao: 'edicao'
-        })
-      }
-
-      if (historicos.length > 0) {
-        await supabase.from('historico_alteracoes').insert(historicos)
-      }
-
-      toast.success("Lançamento atualizado com sucesso!")
-    } else {
-      toast.error("Erro ao atualizar lançamento.")
-    }
-
-    setIsSubmitting(false)
-    setIsModalEditarValorOpen(false)
-    carregarDados()
-  }
-
-  const handleRemoverFornecedor = async () => {
     if (!lancamentoSelecionado || !user || !empresaAtivaId) return
+    if (!editForm.descricao.trim() || !editForm.valor || Number(editForm.valor) <= 0 || !editForm.data_competencia) return
     setIsSubmitting(true)
 
-    const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
+    const fechado = await isPeriodoFechado(empresaAtivaId, editForm.data_competencia)
     if (fechado) {
-      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterá-lo.")
+      toast.error("⚠️ ERRO: A competência deste lançamento pertence a um mês já FECHADO. Não é possível alterar seus dados.")
       setIsSubmitting(false)
       return
     }
 
+    const dataAtualizacao = { 
+      valor: Number(editForm.valor),
+      descricao: editForm.descricao.trim(),
+      data_competencia: editForm.data_competencia,
+      data_vencimento: editForm.data_vencimento || editForm.data_competencia,
+      fornecedor_id: editForm.fornecedor_id || null,
+      tipo_despesa_id: editForm.tipo_despesa_id || null,
+      centro_custo_id: editForm.centro_custo_id || null,
+      conta_id: editForm.conta_id || null,
+      destino_pagamento_id: editForm.destino_pagamento_id || null
+    }
+
     const { error } = await supabase.from('lancamentos')
-      .update({ fornecedor_id: null })
+      .update(dataAtualizacao)
       .eq('id', lancamentoSelecionado.id)
 
     if (!error) {
@@ -388,26 +371,36 @@ export default function Financeiro() {
         tabela: 'lancamentos',
         registro_id: lancamentoSelecionado.id,
         usuario_id: user.id,
-        campo_alterado: 'fornecedor_id',
-        valor_anterior: lancamentoSelecionado.fornecedores?.razao_social || 'existente',
-        valor_novo: 'removido',
+        campo_alterado: 'multiplos_campos',
+        valor_anterior: 'edicao_modal',
+        valor_novo: 'edicao_modal',
         acao: 'edicao'
       }])
-      toast.success("Fornecedor removido com sucesso!")
-      setIsModalDetalhesOpen(false)
-      carregarDados()
+
+      toast.success("Lançamento atualizado com sucesso!")
     } else {
-      toast.error("Erro ao remover fornecedor.")
+      toast.error("Erro ao atualizar lançamento.")
     }
+
     setIsSubmitting(false)
+    setIsModalDetalhesOpen(false)
+    carregarDados()
   }
 
-  const openEditarLancamento = (l: Lancamento) => {
+  const openDetalhes = (l: Lancamento) => {
     setLancamentoSelecionado(l)
-    setNovoValor(l.valor)
-    setNovaDataVencimento(l.data_vencimento || l.data_competencia)
-    setNovaDescricao(l.descricao)
-    setIsModalEditarValorOpen(true)
+    setEditForm({
+      descricao: l.descricao || '',
+      valor: l.valor ? Number(l.valor).toFixed(2) : '',
+      data_competencia: l.data_competencia || '',
+      data_vencimento: l.data_vencimento || l.data_competencia || '',
+      fornecedor_id: l.fornecedor_id || '',
+      tipo_despesa_id: l.tipo_despesa_id || '',
+      centro_custo_id: l.centro_custo_id || '',
+      conta_id: l.conta_id || '',
+      destino_pagamento_id: l.destino_pagamento_id || ''
+    })
+    setIsModalDetalhesOpen(true)
   }
 
   return (
@@ -609,16 +602,6 @@ export default function Financeiro() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => openEditarLancamento(lanc)}
-                                  title="Editar Lançamento"
-                                  className="!text-blue-500 hover:!bg-blue-50"
-                                  icon={<Pencil className="w-4 h-4" />}
-                                />
-                              )}
-                              {!isPago && !isEstornado && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
                                   onClick={() => openBaixa(lanc)}
                                   title="Baixar Lançamento"
                                   className="!text-success hover:!bg-success/10"
@@ -661,11 +644,8 @@ export default function Financeiro() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {
-                                  setLancamentoSelecionado(lanc)
-                                  setIsModalDetalhesOpen(true)
-                                }}
-                                title="Detalhes"
+                                onClick={() => openDetalhes(lanc)}
+                                title="Detalhes e Edição"
                               >
                                 Ver Detalhes
                               </Button>
@@ -787,127 +767,133 @@ export default function Financeiro() {
         </div>
       </Modal>
 
-      {/* MODAL DE EDITAR LANÇAMENTO */}
-      <Modal
-        isOpen={isModalEditarValorOpen}
-        onClose={() => setIsModalEditarValorOpen(false)}
-        title="Editar Lançamento"
-        subtitle="Altere o valor ou a data de vencimento. O histórico manterá os registros das alterações."
-        icon={<Pencil className="w-5 h-5 text-blue-500" />}
-        size="sm"
-      >
-        <form onSubmit={handleEditarLancamento} className="space-y-4">
-          <Input
-            label="Descrição / Referência"
-            type="text"
-            required
-            value={novaDescricao}
-            onChange={(e) => setNovaDescricao(e.target.value)}
-          />
-          <Input
-            label="Data de Vencimento"
-            type="date"
-            required
-            value={novaDataVencimento}
-            onChange={(e) => setNovaDataVencimento(e.target.value)}
-          />
-          <Input
-            label="Novo Valor (R$)"
-            type="number"
-            required
-            min="0.01"
-            step="0.01"
-            value={novoValor}
-            onChange={(e) => setNovoValor(e.target.value === '' ? '' : Number(e.target.value))}
-          />
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
-            <Button type="button" variant="ghost" onClick={() => setIsModalEditarValorOpen(false)}>Cancelar</Button>
-            <Button type="submit" loading={isSubmitting}>Salvar</Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* MODAL DE DETALHES */}
+      {/* MODAL DE DETALHES E EDIÇÃO */}
       <Modal
         isOpen={isModalDetalhesOpen}
         onClose={() => setIsModalDetalhesOpen(false)}
-        title="Detalhes do Lançamento"
-        size="md"
+        title="Detalhes e Edição do Lançamento"
+        size="lg"
       >
         {lancamentoSelecionado && (
-          <div className="space-y-4 text-sm text-slate-700">
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg">
+          <form onSubmit={handleSalvarDetalhes} className="space-y-6 text-sm text-slate-700">
+            {/* INFORMAÇÕES GERAIS E STATUS (Read-only) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl mb-4 border border-slate-100">
               <div>
-                <span className="block text-xs text-slate-500 font-medium mb-1">Descrição</span>
-                <p className="font-semibold">{lancamentoSelecionado.descricao}</p>
+                <span className="block text-xs text-slate-500 font-medium mb-1">Status do Lançamento</span>
+                <Badge variant={lancamentoSelecionado.status === 'estornado' ? 'neutral' : 'success'} className="capitalize">{lancamentoSelecionado.status}</Badge>
               </div>
               <div>
-                <span className="block text-xs text-slate-500 font-medium mb-1">Valor</span>
-                <p className={`font-semibold ${lancamentoSelecionado.tipo === 'receita' ? 'text-success' : 'text-danger'}`}>
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lancamentoSelecionado.valor)}
-                </p>
+                <span className="block text-xs text-slate-500 font-medium mb-1">Situação Pagamento</span>
+                <Badge variant={lancamentoSelecionado.status_pagamento === 'pago' ? 'success' : lancamentoSelecionado.status_pagamento === 'atrasado' ? 'danger' : 'warning'} className="capitalize">
+                  {lancamentoSelecionado.status_pagamento}
+                </Badge>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium mb-1">Tipo</span>
+                <p className="font-semibold capitalize text-slate-800">{lancamentoSelecionado.tipo.replace('_', ' ')}</p>
+              </div>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium mb-1">Subtipo</span>
+                <p className="font-semibold capitalize text-slate-800">{lancamentoSelecionado.subtipo.replace('_', ' ')}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Tipo</span>
-                <p className="capitalize">{lancamentoSelecionado.tipo}</p>
+            {/* DADOS PRINCIPAIS */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-slate-800 border-b border-slate-100 pb-2">Informações Base</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Descrição / Referência"
+                  value={editForm.descricao}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, descricao: e.target.value }))}
+                  required
+                />
+                <Input
+                  label="Valor (R$)"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={editForm.valor}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, valor: e.target.value }))}
+                  required
+                />
+                <Input
+                  label="Data Competência"
+                  type="date"
+                  value={editForm.data_competencia}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, data_competencia: e.target.value }))}
+                  required
+                />
+                <Input
+                  label="Data Vencimento"
+                  type="date"
+                  value={editForm.data_vencimento}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, data_vencimento: e.target.value }))}
+                  required
+                />
               </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Subtipo</span>
-                <p className="capitalize">{lancamentoSelecionado.subtipo.replace('_', ' ')}</p>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Status do Lançamento</span>
-                <p className="capitalize">{lancamentoSelecionado.status}</p>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Situação de Pagamento</span>
-                <p className="capitalize">{lancamentoSelecionado.status_pagamento}</p>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Data Competência</span>
-                <p>{format(new Date(lancamentoSelecionado.data_competencia + 'T12:00:00'), 'dd/MM/yyyy')}</p>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Data Vencimento</span>
-                <p>{lancamentoSelecionado.data_vencimento ? format(new Date(lancamentoSelecionado.data_vencimento + 'T12:00:00'), 'dd/MM/yyyy') : '-'}</p>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Data Pagamento</span>
-                <p>{lancamentoSelecionado.data_pagamento ? format(new Date(lancamentoSelecionado.data_pagamento + 'T12:00:00'), 'dd/MM/yyyy') : '-'}</p>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Centro de Custo</span>
-                <p>{lancamentoSelecionado.centro_custo?.nome || '-'}</p>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Classificação (DRE)</span>
-                <p>{lancamentoSelecionado.tipo_despesa?.nome || '-'}</p>
-              </div>
-              <div className="relative group">
-                <span className="block text-xs text-slate-500 font-medium">Fornecedor / Origem</span>
-                <div className="flex items-center gap-2">
-                  <p>{lancamentoSelecionado.fornecedores?.razao_social || '-'}</p>
-                  {lancamentoSelecionado.fornecedores?.razao_social && (
-                    <button 
-                      onClick={handleRemoverFornecedor}
-                      disabled={isSubmitting}
-                      className="opacity-0 group-hover:opacity-100 text-xs text-danger hover:underline disabled:opacity-50 transition-opacity"
-                      title="Remover Fornecedor"
-                    >
-                      Remover
-                    </button>
-                  )}
+            </div>
+
+            {/* CLASSIFICAÇÃO */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-slate-800 border-b border-slate-100 pb-2">Classificação e Contabilidade</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Select
+                    label="Fornecedor / Origem"
+                    value={editForm.fornecedor_id}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, fornecedor_id: e.target.value }))}
+                    options={[
+                      { value: '', label: 'Nenhum / Sem fornecedor' },
+                      ...fornecedores.map(f => ({ value: f.id, label: f.razao_social }))
+                    ]}
+                  />
                 </div>
+                <Select
+                  label="Centro de Custo"
+                  value={editForm.centro_custo_id}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, centro_custo_id: e.target.value }))}
+                  options={[
+                    { value: '', label: 'Nenhum' },
+                    ...centrosCusto.map(c => ({ value: c.id, label: c.nome }))
+                  ]}
+                />
+                <Select
+                  label="Classificação (DRE) / Tipo Despesa"
+                  value={editForm.tipo_despesa_id}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, tipo_despesa_id: e.target.value }))}
+                  options={[
+                    { value: '', label: 'Nenhuma' },
+                    ...tiposDespesa.map(t => ({ value: t.id, label: t.nome }))
+                  ]}
+                />
+                <Select
+                  label="Conta Bancária Origem"
+                  value={editForm.conta_id}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, conta_id: e.target.value }))}
+                  options={[
+                    { value: '', label: 'Nenhuma' },
+                    ...contas.map(c => ({ value: c.id, label: c.nome }))
+                  ]}
+                />
+                <Select
+                  label="Destino de Pagamento"
+                  value={editForm.destino_pagamento_id}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, destino_pagamento_id: e.target.value }))}
+                  options={[
+                    { value: '', label: 'Nenhum' },
+                    ...destinos.map(d => ({ value: d.id, label: d.nome }))
+                  ]}
+                />
               </div>
             </div>
-            
-            <div className="flex justify-end pt-4 border-t border-slate-100 mt-6">
-              <Button onClick={() => setIsModalDetalhesOpen(false)}>Fechar</Button>
+
+            {/* BOTÕES */}
+            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+              <Button type="button" variant="ghost" onClick={() => setIsModalDetalhesOpen(false)}>Cancelar</Button>
+              <Button type="submit" loading={isSubmitting}>Salvar Alterações</Button>
             </div>
-          </div>
+          </form>
         )}
       </Modal>
 

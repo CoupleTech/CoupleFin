@@ -29,7 +29,7 @@ export async function isPeriodoFechado(empresaId: string, dataCompetencia: strin
     .select('status')
     .eq('empresa_id', empresaId)
     .eq('competencia', competenciaFormatada)
-    .single()
+    .maybeSingle()
 
   if (error || !data) {
     return false // Se não achar o período, assume que está aberto
