@@ -6,7 +6,7 @@ import { PageLoading } from '../components/ui/LoadingSpinner'
 import { Plus, Edit2, Trash2, Bookmark, Check, XCircle, Search, Ban } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { usePagination } from '../hooks/usePagination'
-import toast from 'react-hot-toast'
+import { toast } from '../store/useToastStore'
 
 interface TipoDespesa {
   id: string
