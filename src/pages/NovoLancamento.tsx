@@ -164,20 +164,22 @@ export default function NovoLancamento() {
     let html5QrCode: Html5Qrcode | null = null;
 
     if (isScanning) {
-      html5QrCode = new Html5Qrcode("reader");
+      html5QrCode = new Html5Qrcode("reader", {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.QR_CODE
+        ],
+        useBarCodeDetectorIfSupported: true,
+        verbose: false
+      });
       
       html5QrCode.start(
         { facingMode: "environment" },
         {
           fps: 15,
-          qrbox: { width: 320, height: 120 },
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.ITF,
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.QR_CODE
-          ],
-          useBarCodeDetectorIfSupported: true
+          qrbox: { width: 320, height: 120 }
         },
         (decodedText) => {
           // Remover tudo que não for número e tentar encontrar os 44 dígitos
