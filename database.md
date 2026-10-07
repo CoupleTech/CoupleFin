@@ -145,6 +145,7 @@ CREATE TABLE lancamentos (
   data_pagamento date,
   status_pagamento text DEFAULT 'pendente' CHECK (status_pagamento IN ('pendente', 'pago', 'atrasado', 'pago parcialmente')),
   descricao text,
+  observacoes text,
   empresa_origem_id uuid REFERENCES empresas(id),
   empresa_destino_id uuid REFERENCES empresas(id),
   conta_origem_id uuid REFERENCES contas(id),

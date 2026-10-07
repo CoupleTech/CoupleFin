@@ -37,6 +37,7 @@ interface Lancamento {
   status_pagamento: string
   status: string
   descricao: string
+  observacoes?: string
   fornecedores?: { razao_social: string }
   centro_custo?: { nome: string }
   fornecedor_id?: string
@@ -79,6 +80,7 @@ export default function Financeiro() {
   // Formulário Edição
   const [editForm, setEditForm] = useState({
     descricao: '',
+    observacoes: '',
     valor: '',
     data_competencia: '',
     data_vencimento: '',
@@ -353,6 +355,7 @@ export default function Financeiro() {
     const dataAtualizacao = { 
       valor: Number(editForm.valor),
       descricao: editForm.descricao.trim(),
+      observacoes: editForm.observacoes || null,
       data_competencia: editForm.data_competencia,
       data_vencimento: editForm.data_vencimento || editForm.data_competencia,
       fornecedor_id: editForm.fornecedor_id || null,
@@ -391,6 +394,7 @@ export default function Financeiro() {
     setLancamentoSelecionado(l)
     setEditForm({
       descricao: l.descricao || '',
+      observacoes: l.observacoes || '',
       valor: l.valor ? Number(l.valor).toFixed(2) : '',
       data_competencia: l.data_competencia || '',
       data_vencimento: l.data_vencimento || l.data_competencia || '',
@@ -830,6 +834,17 @@ export default function Financeiro() {
                   onChange={(e) => setEditForm(prev => ({ ...prev, data_vencimento: e.target.value }))}
                   required
                 />
+              </div>
+              <div className="grid grid-cols-1 mt-4">
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-slate-700">Observações Internas (Opcional)</label>
+                  <textarea
+                    value={editForm.observacoes}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, observacoes: e.target.value }))}
+                    placeholder="Notas adicionais para a equipe ou auditoria..."
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[100px] resize-y text-sm"
+                  />
+                </div>
               </div>
             </div>
 

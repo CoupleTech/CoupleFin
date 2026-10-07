@@ -59,6 +59,7 @@ export default function NovoLancamento() {
     subtipo: 'avulso',
     valor: '',
     descricao: '',
+    observacoes: '',
     data_competencia: format(new Date(), 'yyyy-MM-dd'),
     data_vencimento: format(new Date(), 'yyyy-MM-dd'),
     data_pagamento: '',
@@ -280,6 +281,7 @@ export default function NovoLancamento() {
             subtipo: formData.subtipo,
             valor: valorRateado,
             descricao: descFinal,
+            observacoes: formData.observacoes || null,
             data_competencia: p.data_vencimento, // Competência alinhada ao mês do vencimento da parcela
             data_vencimento: p.data_vencimento,
             data_pagamento: null,
@@ -304,6 +306,7 @@ export default function NovoLancamento() {
           subtipo: formData.subtipo,
           valor: valorUnitario,
           descricao: `${formData.descricao}${rateioSuffix}`,
+          observacoes: formData.observacoes || null,
           data_competencia: formData.data_competencia,
           data_vencimento: formData.data_vencimento || null,
           data_pagamento: (formData.ja_pago && formData.data_pagamento && empId === empresaAtivaId) ? formData.data_pagamento : null,
@@ -655,6 +658,17 @@ export default function NovoLancamento() {
                   onChange={(e) => setFormData({...formData, descricao: e.target.value})}
                   placeholder="Ex: Compra de material, Pagamento de Internet..."
                 />
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-slate-700">Observações Internas (Opcional)</label>
+                  <textarea
+                    value={formData.observacoes}
+                    onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+                    placeholder="Notas adicionais para a equipe ou auditoria..."
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[100px] resize-y text-sm"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
