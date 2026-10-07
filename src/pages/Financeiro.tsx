@@ -16,7 +16,6 @@ import {
   Clock,
   CheckCircle,
   Ban,
-  Pencil,
   Trash2
 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
@@ -43,6 +42,7 @@ interface Lancamento {
   fornecedor_id?: string
   centro_custo_id?: string
   tipo_despesa_id?: string
+  tipo_despesa?: { nome: string, grupo_dre: string }
   conta_id?: string
   destino_pagamento_id?: string
 }
