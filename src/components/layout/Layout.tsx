@@ -164,6 +164,37 @@ export default function Layout({ children }: LayoutProps) {
           )}
         </div>
 
+        {/* Seletor de empresa — Mobile Only */}
+        {!sidebarCollapsed && empresas.length > 0 && (
+          <div className="lg:hidden px-4 mb-4">
+            <span className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+              Empresa Atual
+            </span>
+            <select 
+              value={empresaAtivaId || ''} 
+              onChange={(e) => {
+                setEmpresaAtiva(e.target.value)
+                closeMobileSidebar()
+              }}
+              className="
+                w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm
+                rounded-lg px-3 py-2 pr-8
+                focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none
+                transition-all duration-fast
+                appearance-none cursor-pointer
+                bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2214%22%20height%3D%2214%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]
+                bg-[length:14px] bg-[right_8px_center] bg-no-repeat
+              "
+            >
+              {empresas.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.nome_fantasia || emp.razao_social}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="px-3 space-y-0.5">
           {navItems.map((item) => {
