@@ -81,10 +81,12 @@ export default function Relatorios() {
       const valor = Number(lanc.valor) || 0
 
       // Assume que despesas são negativas e receitas positivas
-      // Se não for transferencia, consideramos o tipo
-      let fator = 1;
-      if (lanc.tipo === 'manual' && lanc.subtipo === 'despesa') fator = -1;
-      if (lanc.tipo === 'nota_fiscal') fator = -1; // NF de entrada de serviço tomada = despesa
+      const isReceita = lanc.subtipo === 'receita' || lanc.subtipo === 'nf_receita';
+      const isTransferencia = lanc.subtipo === 'transferencia_empresa' || lanc.subtipo === 'transferencia_conta';
+
+      if (isTransferencia) return; // Ignora transferências nos relatórios gerenciais por padrão
+      
+      let fator = isReceita ? 1 : -1;
 
       if (tipoRelatorio === 'centro_custo') {
         chave = lanc.centro_custo?.nome || 'Sem Centro de Custo'

@@ -82,7 +82,10 @@ function App() {
       document.documentElement.style.setProperty('--color-primary', cor_primaria)
       
       if (empresas.length > 0) {
-        setEmpresaAtiva(empresas[0].id)
+        const currentState = useAppStore.getState()
+        if (!currentState.empresaAtivaId || !empresas.some(e => e.id === currentState.empresaAtivaId)) {
+          setEmpresaAtiva(empresas[0].id)
+        }
       }
 
       if (mounted) setLoading(false)

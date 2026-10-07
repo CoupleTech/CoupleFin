@@ -121,11 +121,12 @@ export default function Dashboard() {
 
     lancsMes.forEach(lanc => {
       const valor = Number(lanc.valor) || 0
-      let fator = 1
-      if (lanc.tipo === 'manual' && lanc.subtipo === 'despesa') fator = -1
-      if (lanc.tipo === 'nota_fiscal') fator = -1
+      const isReceita = lanc.subtipo === 'receita' || lanc.subtipo === 'nf_receita'
+      const isTransferencia = lanc.subtipo === 'transferencia_empresa' || lanc.subtipo === 'transferencia_conta'
 
-      if (fator === -1) {
+      if (isReceita) {
+        tReceitas += valor
+      } else if (!isTransferencia) {
         tDespesas += valor
         
         // Agrupamentos (somente despesas)
@@ -141,9 +142,6 @@ export default function Dashboard() {
 
         const emp = lanc.empresa?.nome_fantasia || 'Desconhecida'
         mapaEmp.set(emp, (mapaEmp.get(emp) || 0) + valor)
-
-      } else {
-        tReceitas += valor
       }
 
       // Checar vencimentos dos lançamentos do mês que não estão pagos

@@ -368,6 +368,40 @@ export default function Financeiro() {
     carregarDados()
   }
 
+  const handleRemoverFornecedor = async () => {
+    if (!lancamentoSelecionado || !user || !empresaAtivaId) return
+    setIsSubmitting(true)
+
+    const fechado = await isPeriodoFechado(empresaAtivaId, lancamentoSelecionado.data_competencia)
+    if (fechado) {
+      toast.error("⚠️ ERRO: Este lançamento pertence a um mês já FECHADO. Não é possível alterá-lo.")
+      setIsSubmitting(false)
+      return
+    }
+
+    const { error } = await supabase.from('lancamentos')
+      .update({ fornecedor_id: null })
+      .eq('id', lancamentoSelecionado.id)
+
+    if (!error) {
+      await supabase.from('historico_alteracoes').insert([{
+        tabela: 'lancamentos',
+        registro_id: lancamentoSelecionado.id,
+        usuario_id: user.id,
+        campo_alterado: 'fornecedor_id',
+        valor_anterior: lancamentoSelecionado.fornecedores?.razao_social || 'existente',
+        valor_novo: 'removido',
+        acao: 'edicao'
+      }])
+      toast.success("Fornecedor removido com sucesso!")
+      setIsModalDetalhesOpen(false)
+      carregarDados()
+    } else {
+      toast.error("Erro ao remover fornecedor.")
+    }
+    setIsSubmitting(false)
+  }
+
   const openEditarLancamento = (l: Lancamento) => {
     setLancamentoSelecionado(l)
     setNovoValor(l.valor)
@@ -852,9 +886,21 @@ export default function Financeiro() {
                 <span className="block text-xs text-slate-500 font-medium">Classificação (DRE)</span>
                 <p>{lancamentoSelecionado.tipo_despesa?.nome || '-'}</p>
               </div>
-              <div>
+              <div className="relative group">
                 <span className="block text-xs text-slate-500 font-medium">Fornecedor / Origem</span>
-                <p>{lancamentoSelecionado.fornecedores?.razao_social || '-'}</p>
+                <div className="flex items-center gap-2">
+                  <p>{lancamentoSelecionado.fornecedores?.razao_social || '-'}</p>
+                  {lancamentoSelecionado.fornecedores?.razao_social && (
+                    <button 
+                      onClick={handleRemoverFornecedor}
+                      disabled={isSubmitting}
+                      className="opacity-0 group-hover:opacity-100 text-xs text-danger hover:underline disabled:opacity-50 transition-opacity"
+                      title="Remover Fornecedor"
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             

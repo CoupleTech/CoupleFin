@@ -21,8 +21,10 @@ const subtiposPorTipo: Record<string, { value: string, label: string }[]> = {
     { value: 'nfse', label: 'NFS-e (Serviço)' },
     { value: 'nota_talao', label: 'Nota Talão' },
     { value: 'nota_consumo', label: 'Nota de Consumo' },
+    { value: 'nf_receita', label: 'NF Emitida (Receita)' },
   ],
   'manual': [
+    { value: 'receita', label: 'Receita / Faturamento' },
     { value: 'salario', label: 'Salários e Encargos' },
     { value: 'taxa', label: 'Taxas e Impostos' },
     { value: 'contrato', label: 'Contrato Recorrente' },
@@ -369,6 +371,7 @@ export default function NovoLancamento() {
 
   const isTransfConta = formData.subtipo === 'transferencia_conta'
   const isTransfEmpresa = formData.subtipo === 'transferencia_empresa'
+  const isSemFornecedor = ['salario', 'taxa', 'saque', 'multa'].includes(formData.subtipo)
 
   return (
     <Layout>
@@ -678,7 +681,7 @@ export default function NovoLancamento() {
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              {!isTransfConta && !isTransfEmpresa && (
+              {!isTransfConta && !isTransfEmpresa && !isSemFornecedor && (
                 <Select
                   label="Fornecedor (Opcional)"
                   value={formData.fornecedor_id}
