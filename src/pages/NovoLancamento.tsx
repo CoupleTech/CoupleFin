@@ -651,7 +651,6 @@ export default function NovoLancamento() {
                 <Input
                   label="Descrição / Referência"
                   type="text"
-                  required
                   value={formData.descricao}
                   onChange={(e) => setFormData({...formData, descricao: e.target.value})}
                   placeholder="Ex: Compra de material, Pagamento de Internet..."

@@ -806,7 +806,6 @@ export default function Financeiro() {
                   label="Descrição / Referência"
                   value={editForm.descricao}
                   onChange={(e) => setEditForm(prev => ({ ...prev, descricao: e.target.value }))}
-                  required
                 />
                 <Input
                   label="Valor (R$)"
