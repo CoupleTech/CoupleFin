@@ -27,13 +27,14 @@ interface Lancamento {
   data_vencimento: string | null
   descricao: string
   status_pagamento: string
+  empresa_origem_id?: string | null
   fornecedores?: { razao_social: string }
   centro_custo?: { nome: string }
   tipo_despesa?: { nome: string, grupo_dre: string }
 }
 
 export default function ContasPagar() {
-  const { empresaAtivaId, user } = useAppStore()
+  const { empresaAtivaId, user, empresas } = useAppStore()
   
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,7 +61,7 @@ export default function ContasPagar() {
     const { data, error } = await supabase
       .from('lancamentos')
       .select(`
-        id, tipo, subtipo, valor, valor_acrescimo, valor_desconto, data_competencia, data_vencimento, descricao, status_pagamento,
+        id, tipo, subtipo, valor, valor_acrescimo, valor_desconto, data_competencia, data_vencimento, descricao, status_pagamento, empresa_origem_id,
         fornecedores(razao_social),
         centro_custo(nome),
         tipo_despesa(nome, grupo_dre)
@@ -166,10 +167,22 @@ export default function ContasPagar() {
   // Componente de Card para cada lançamento no Kanban
   const LancamentoCard = ({ lanc, isAtrasado = false }: { lanc: Lancamento, isAtrasado?: boolean }) => {
     const isReceita = lanc.tipo_despesa?.grupo_dre === 'receita'
+    const empresaOrigem = lanc.empresa_origem_id && lanc.empresa_origem_id !== empresaAtivaId
+      ? empresas.find(e => e.id === lanc.empresa_origem_id)
+      : null
+
     return (
       <div className={`p-4 bg-white border ${isAtrasado ? 'border-danger/30 shadow-danger/5' : 'border-slate-200'} rounded-lg shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden`}>
         {isAtrasado && <div className="absolute top-0 left-0 w-1 h-full bg-danger"></div>}
         
+        {empresaOrigem && (
+          <div className="mb-2">
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 rounded px-1.5 py-0.5">
+              Faturado via: {empresaOrigem.nome_fantasia || empresaOrigem.razao_social}
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between items-start mb-2">
           <span className={`text-sm font-bold ${isReceita ? 'text-success' : 'text-slate-800'}`}>
              {isReceita ? '+' : ''}{formatCurrency(lanc.valor)}
@@ -300,6 +313,12 @@ export default function ContasPagar() {
         size="sm"
       >
         <form onSubmit={handleBaixa} className="space-y-4">
+          {lancamentoSelecionado?.empresa_origem_id && lancamentoSelecionado.empresa_origem_id !== empresaAtivaId && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
+              <strong>Compra Intercompany:</strong> A nota fiscal foi faturada para <strong>{empresas.find(e => e.id === lancamentoSelecionado.empresa_origem_id)?.nome_fantasia || 'outra empresa do grupo'}</strong>. Esta baixa liquidará o compromisso financeiro para a empresa ativa.
+            </div>
+          )}
+
           <Input
             label="Data Efetiva"
             type="date"

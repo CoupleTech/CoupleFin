@@ -39,6 +39,7 @@ const subtiposPorTipo: Record<string, { value: string, label: string }[]> = {
 export default function NovoLancamento() {
   const navigate = useNavigate()
   const { empresaAtivaId, empresas } = useAppStore()
+  const empresaAtiva = empresas.find(e => e.id === empresaAtivaId)
   const grupo_id = empresas.length > 0 ? empresas[0].grupo_id : null
 
   // Loading states
@@ -83,8 +84,9 @@ export default function NovoLancamento() {
   // Arquivos
   const [arquivos, setArquivos] = useState<File[]>([])
 
-  // Rateio
-  const [isRateio, setIsRateio] = useState(false)
+  // Rateio e Intercompany
+  const [destinoTipo, setDestinoTipo] = useState<'propria' | 'intercompany' | 'rateio'>('propria')
+  const [empresaIntercompanyId, setEmpresaIntercompanyId] = useState<string>('')
   const [empresasRateio, setEmpresasRateio] = useState<string[]>([])
 
   // Parcelamento
@@ -226,7 +228,8 @@ export default function NovoLancamento() {
     setIsSubmitting(true)
     
     // VALIDACAO DO GATEKEEPER
-    const fechado = await isPeriodoFechado(empresaAtivaId, formData.data_competencia)
+    const targetEmpresaCheck = (destinoTipo === 'intercompany' && empresaIntercompanyId) ? empresaIntercompanyId : empresaAtivaId
+    const fechado = await isPeriodoFechado(targetEmpresaCheck, formData.data_competencia)
     if (fechado) {
       toast.error("⚠️ ERRO: A data de competência selecionada pertence a um mês já FECHADO. Não é possível registrar lançamentos neste período.")
       setIsSubmitting(false)
@@ -239,7 +242,24 @@ export default function NovoLancamento() {
       return
     }
 
-    const arrayEmpresas = isRateio && empresasRateio.length > 0 && formData.subtipo !== 'transferencia_empresa' && formData.subtipo !== 'transferencia_conta' ? empresasRateio : [empresaAtivaId]
+    let arrayEmpresas: { empId: string; origemId: string | null }[] = []
+
+    if (formData.subtipo === 'transferencia_empresa' || formData.subtipo === 'transferencia_conta') {
+      arrayEmpresas = [{ empId: empresaAtivaId, origemId: null }]
+    } else if (destinoTipo === 'intercompany' && empresaIntercompanyId) {
+      // 100% para outra empresa (Intercompany)
+      arrayEmpresas = [{ empId: empresaIntercompanyId, origemId: empresaAtivaId }]
+    } else if (destinoTipo === 'rateio' && empresasRateio.length > 0) {
+      // Rateio entre empresas
+      arrayEmpresas = empresasRateio.map(empId => ({
+        empId,
+        origemId: empId !== empresaAtivaId ? empresaAtivaId : null
+      }))
+    } else {
+      // Própria empresa
+      arrayEmpresas = [{ empId: empresaAtivaId, origemId: null }]
+    }
+
     const valorTotal = parseFloat(formData.valor) || 0
     const valorUnitario = valorTotal / arrayEmpresas.length
     
@@ -249,8 +269,11 @@ export default function NovoLancamento() {
     // Obter nomes originais para tentar match nas outras empresas
     const nomeTD = formData.tipo_despesa_id ? tiposDespesa.find(t => t.id === formData.tipo_despesa_id)?.nome : null
     const nomeCC = formData.centro_custo_id ? centrosCusto.find(t => t.id === formData.centro_custo_id)?.nome : null
+    const nomeEmpresaOrigem = empresaAtiva?.nome_fantasia || empresaAtiva?.razao_social || 'Empresa Origem'
 
-    for (const empId of arrayEmpresas) {
+    for (const item of arrayEmpresas) {
+      const empId = item.empId
+      const isIntercompany = item.origemId !== null
       let targetTD = null
       let targetCC = null
 
@@ -259,21 +282,36 @@ export default function NovoLancamento() {
         targetCC = formData.centro_custo_id || null
       } else {
         if (nomeTD) {
-          const { data } = await supabase.from('tipo_despesa').select('id').eq('empresa_id', empId).eq('nome', nomeTD).eq('ativo', true).single()
+          const { data } = await supabase.from('tipo_despesa').select('id').eq('empresa_id', empId).eq('nome', nomeTD).eq('ativo', true).maybeSingle()
           if (data) targetTD = data.id
         }
+        if (!targetTD) {
+          const { data: firstTD } = await supabase.from('tipo_despesa').select('id').eq('empresa_id', empId).eq('ativo', true).limit(1).maybeSingle()
+          if (firstTD) targetTD = firstTD.id
+        }
         if (nomeCC) {
-          const { data } = await supabase.from('centro_custo').select('id').eq('empresa_id', empId).eq('nome', nomeCC).eq('ativo', true).single()
+          const { data } = await supabase.from('centro_custo').select('id').eq('empresa_id', empId).eq('nome', nomeCC).eq('ativo', true).maybeSingle()
           if (data) targetCC = data.id
+        }
+        if (!targetCC) {
+          const { data: firstCC } = await supabase.from('centro_custo').select('id').eq('empresa_id', empId).eq('ativo', true).limit(1).maybeSingle()
+          if (firstCC) targetCC = firstCC.id
         }
       }
 
-      const rateioSuffix = arrayEmpresas.length > 1 ? ` (Rateio)` : ``
+      let intercompanySuffix = ''
+      if (isIntercompany) {
+        intercompanySuffix = destinoTipo === 'rateio' 
+          ? ` (Rateio - Faturado via ${nomeEmpresaOrigem})` 
+          : ` (Faturado via ${nomeEmpresaOrigem})`
+      } else if (arrayEmpresas.length > 1) {
+        intercompanySuffix = ` (Rateio)`
+      }
 
       if (isParcelado && parcelas.length > 0) {
         for (const p of parcelas) {
           const valorRateado = parseFloat(p.valor) / arrayEmpresas.length
-          const descFinal = `${formData.descricao} (Parc ${p.numero}/${parcelas.length})${rateioSuffix}`
+          const descFinal = `${formData.descricao} (Parc ${p.numero}/${parcelas.length})${intercompanySuffix}`
           
           payloadsToInsert.push({
             empresa_id: empId,
@@ -293,7 +331,7 @@ export default function NovoLancamento() {
             destino_pagamento_id: empId === empresaAtivaId ? (formData.destino_pagamento_id || null) : null,
             chave_acesso: formData.tipo === 'nota_fiscal' ? formData.chave_acesso : null,
             numero_documento: formData.tipo === 'nota_fiscal' ? formData.numero_documento : null,
-            empresa_origem_id: formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null,
+            empresa_origem_id: isIntercompany ? empresaAtivaId : (formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null),
             empresa_destino_id: formData.subtipo === 'transferencia_empresa' ? formData.empresa_destino_id : null,
             conta_origem_id: formData.subtipo === 'transferencia_conta' ? formData.conta_id : null,
             conta_destino_id: formData.subtipo === 'transferencia_conta' ? formData.conta_destino_id : null,
@@ -305,12 +343,12 @@ export default function NovoLancamento() {
           tipo: formData.tipo,
           subtipo: formData.subtipo,
           valor: valorUnitario,
-          descricao: `${formData.descricao}${rateioSuffix}`,
+          descricao: `${formData.descricao}${intercompanySuffix}`,
           observacoes: formData.observacoes || null,
           data_competencia: formData.data_competencia,
           data_vencimento: formData.data_vencimento || null,
-          data_pagamento: (formData.ja_pago && formData.data_pagamento && empId === empresaAtivaId) ? formData.data_pagamento : null,
-          status_pagamento: (formData.ja_pago && empId === empresaAtivaId) ? 'pago' : 'pendente',
+          data_pagamento: (!isIntercompany && formData.ja_pago && formData.data_pagamento && empId === empresaAtivaId) ? formData.data_pagamento : null,
+          status_pagamento: (!isIntercompany && formData.ja_pago && empId === empresaAtivaId) ? 'pago' : 'pendente',
           centro_custo_id: targetCC,
           tipo_despesa_id: targetTD,
           conta_id: empId === empresaAtivaId ? (formData.conta_id || null) : null,
@@ -318,7 +356,7 @@ export default function NovoLancamento() {
           destino_pagamento_id: empId === empresaAtivaId ? (formData.destino_pagamento_id || null) : null,
           chave_acesso: formData.tipo === 'nota_fiscal' ? formData.chave_acesso : null,
           numero_documento: formData.tipo === 'nota_fiscal' ? formData.numero_documento : null,
-          empresa_origem_id: formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null,
+          empresa_origem_id: isIntercompany ? empresaAtivaId : (formData.subtipo === 'transferencia_empresa' ? empresaAtivaId : null),
           empresa_destino_id: formData.subtipo === 'transferencia_empresa' ? formData.empresa_destino_id : null,
           conta_origem_id: formData.subtipo === 'transferencia_conta' ? formData.conta_id : null,
           conta_destino_id: formData.subtipo === 'transferencia_conta' ? formData.conta_destino_id : null,
@@ -405,7 +443,8 @@ export default function NovoLancamento() {
   const opsContas = [{ value: '', label: 'Selecione...' }, ...contas.map(c => ({ value: c.id, label: c.nome }))]
   const opsDestinos = [{ value: '', label: 'Selecione...' }, ...destinos.map(c => ({ value: c.id, label: c.nome }))]
   const opsForn = [{ value: '', label: 'Nenhum / Selecione...' }, ...fornecedores.map(c => ({ value: c.id, label: c.razao_social }))]
-  const opsEmpresas = [{ value: '', label: 'Selecione...' }, ...empresas.filter(e => e.id !== empresaAtivaId).map(c => ({ value: c.id, label: c.nome_fantasia }))]
+  const outrasEmpresas = empresas.filter(e => e.id !== empresaAtivaId)
+  const opsEmpresas = [{ value: '', label: 'Selecione...' }, ...outrasEmpresas.map(c => ({ value: c.id, label: c.nome_fantasia || c.razao_social }))]
 
   const isTransfConta = formData.subtipo === 'transferencia_conta'
   const isTransfEmpresa = formData.subtipo === 'transferencia_empresa'
@@ -522,16 +561,73 @@ export default function NovoLancamento() {
                     className="text-lg font-medium"
                   />
                   {!isTransfConta && !isTransfEmpresa && (
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <Toggle
-                        checked={isRateio}
-                        onChange={setIsRateio}
-                        label="Ratear entre Empresas?"
-                      />
-                      
-                      {isRateio && (
-                        <div className="mt-3 pt-3 border-t border-slate-200">
-                          <p className="text-xs text-slate-500 mb-2">O valor total será dividido igualmente entre as empresas selecionadas.</p>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <Building className="w-3.5 h-3.5 text-primary" />
+                          Destino da Compra / Despesa
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 p-1 bg-white border border-slate-200 rounded-lg">
+                        <button
+                          type="button"
+                          onClick={() => setDestinoTipo('propria')}
+                          className={`py-2 px-2 text-xs font-medium rounded-md transition-all text-center ${
+                            destinoTipo === 'propria'
+                              ? 'bg-primary text-white shadow-sm'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          }`}
+                        >
+                          Desta Empresa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDestinoTipo('intercompany')
+                            if (!empresaIntercompanyId && outrasEmpresas.length > 0) {
+                              setEmpresaIntercompanyId(outrasEmpresas[0].id)
+                            }
+                          }}
+                          className={`py-2 px-2 text-xs font-medium rounded-md transition-all text-center ${
+                            destinoTipo === 'intercompany'
+                              ? 'bg-amber-600 text-white shadow-sm'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          }`}
+                        >
+                          100% Intercompany
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDestinoTipo('rateio')}
+                          className={`py-2 px-2 text-xs font-medium rounded-md transition-all text-center ${
+                            destinoTipo === 'rateio'
+                              ? 'bg-primary text-white shadow-sm'
+                              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                          }`}
+                        >
+                          Ratear Empresas
+                        </button>
+                      </div>
+
+                      {destinoTipo === 'intercompany' && (
+                        <div className="mt-3 pt-3 border-t border-slate-200 space-y-2">
+                          <Select
+                            label="Empresa Destinatária (Responsável pela Despesa e Baixa do Boleto)"
+                            value={empresaIntercompanyId}
+                            onChange={(e) => setEmpresaIntercompanyId(e.target.value)}
+                            options={outrasEmpresas.map(e => ({ value: e.id, label: e.nome_fantasia || e.razao_social }))}
+                            required
+                          />
+                          <p className="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200/80 leading-relaxed">
+                            ℹ️ <strong>Regra Intercompany:</strong> A nota ficará registrada nesta empresa ({empresaAtiva?.nome_fantasia || empresaAtiva?.razao_social}), mas o boleto para baixa e a despesa no DRE serão direcionados para a empresa destinatária selecionada.
+                          </p>
+                        </div>
+                      )}
+
+                      {destinoTipo === 'rateio' && (
+                        <div className="mt-3 pt-3 border-t border-slate-200 space-y-2">
+                          <p className="text-xs text-slate-500">Selecione as empresas que dividirão o valor igualmente:</p>
                           <div className="grid grid-cols-1 gap-2">
                             {empresas.map(emp => (
                               <label key={emp.id} className="flex items-center gap-2 cursor-pointer text-sm">

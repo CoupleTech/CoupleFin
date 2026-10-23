@@ -46,6 +46,8 @@ interface Lancamento {
   tipo_despesa?: { nome: string, grupo_dre: string }
   conta_id?: string
   destino_pagamento_id?: string
+  empresa_id?: string
+  empresa_origem_id?: string | null
 }
 
 export default function Financeiro() {
@@ -551,6 +553,10 @@ export default function Financeiro() {
                       const isPago = lanc.status_pagamento === 'pago'
                       const isEstornado = lanc.status === 'estornado'
 
+                      const empresaOrigem = lanc.empresa_origem_id && lanc.empresa_origem_id !== lanc.empresa_id
+                        ? empresas.find(e => e.id === lanc.empresa_origem_id)
+                        : null
+
                       return (
                         <tr key={lanc.id} className={`hover:bg-slate-50/50 transition-colors duration-fast group ${isEstornado ? 'opacity-50' : ''}`}>
                           <td className="px-6 py-4">
@@ -564,9 +570,16 @@ export default function Financeiro() {
                                 <span className="block text-sm font-medium text-slate-800">
                                   {lanc.descricao || lanc.fornecedores?.razao_social || 'Sem descrição'}
                                 </span>
-                                <span className="block text-xs text-slate-500 mt-0.5">
-                                  {lanc.fornecedores?.razao_social && lanc.descricao ? lanc.fornecedores.razao_social : (lanc.tipo === 'nota_fiscal' ? 'Nota Fiscal' : 'Manual')}
-                                </span>
+                                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                  <span className="text-xs text-slate-500">
+                                    {lanc.fornecedores?.razao_social && lanc.descricao ? lanc.fornecedores.razao_social : (lanc.tipo === 'nota_fiscal' ? 'Nota Fiscal' : 'Manual')}
+                                  </span>
+                                  {empresaOrigem && (
+                                    <span className="inline-flex items-center text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 rounded px-1.5 py-0.5">
+                                      Faturado via: {empresaOrigem.nome_fantasia || empresaOrigem.razao_social}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </td>

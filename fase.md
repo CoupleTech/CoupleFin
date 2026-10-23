@@ -299,17 +299,54 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 
 ---
 
-### Fase 15: Desfazer Baixa e Exclusão Lógica (EM ANDAMENTO)
+---
+
+### Fase 15: Desfazer Baixa e Exclusão Lógica (CONCLUÍDA)
 **Objetivo:** Implementar botão de "Desfazer Pagamento" para reverter baixas incorretas, e renomear o botão "Estornar" para "Excluir", funcionando como uma exclusão lógica sem deletar os rastros do banco.
 
 **Tarefas Planejadas:**
 - [x] 1. **Financeiro (UI):** Adicionar botão "Desfazer Pagamento" que retorna o status_pagamento para 'pendente' e limpa valores agregados de pagamento.
 - [x] 2. **Financeiro (UI):** Renomear a interface de estorno para "Excluir / Cancelar Lançamento".
 - [x] 3. **Auditoria:** Garantir que ambas as ações gerem registros de log no banco.
-- [ ] 4. **Release Decision.**
+- [x] 4. **Release Decision.**
 
 *Pipeline de Execução:*
 - [x] 1. Planejamento
 - [x] 2. Implementação e Refatoração UI
 - [x] 3. Validação
-- [ ] 4. Release
+- [x] 4. Release
+
+---
+
+### Fase 16: Compras e Despesas Intercompany (Repasse entre Empresas e DRE) (CONCLUÍDA)
+**Objetivo:** Suportar o fluxo de compras efetuadas por uma empresa do grupo cujo benefício e consumo pertence a outra (ou com rateio), garantindo que o Contas a Pagar seja baixado pela empresa destinatária e o DRE exiba a despesa em linha segregada ("Despesas Intercompany").
+
+**Tarefas Planejadas:**
+- [x] 1. **Definição de Produto e PRP:**
+   - Formalizar regras: compras 100% intercompany e compras rateadas.
+   - Definir segregação do boleto no Contas a Pagar da destinatária.
+   - Definir separação explícita de "Despesas Intercompany" no DRE.
+- [x] 2. **Validação de Arquitetura e RLS:**
+   - Aproveitamento das colunas nativas `empresa_id` (beneficiária) e `empresa_origem_id` (faturada) em `lancamentos`.
+   - Garantir que não há quebra de RLS no grupo.
+- [x] 3. **Frontend - Lançamento (`NovoLancamento.tsx`):**
+   - Seletor de Destino da Despesa: "Própria Empresa", "Outra Empresa (Intercompany 100%)" ou "Rateio Intercompany".
+   - Gravação correta de `empresa_id` para a destinatária e `empresa_origem_id` para a faturada.
+- [x] 4. **Frontend - Contas a Pagar (`ContasPagar.tsx`):**
+   - Exibição de badge/indicação `[Faturado por: Nome da Empresa Origem]` nos boletos recebidos via intercompany.
+- [x] 5. **Frontend - DRE (`DRE.tsx`):**
+   - Criação da linha dedicada `(-) Despesas Intercompany`.
+   - Separação dos lançamentos com `empresa_origem_id != empresa_id` nessa linha.
+   - Detalhamento/drilldown mostrando a empresa que faturou a nota e exportação Excel detalhada.
+- [x] 6. **Validação de QA e Release:**
+   - Build de produção (`tsc && vite build`) validado com sucesso.
+
+*Pipeline de Execução:*
+- [x] 1. Security Rules (`01-baas-security-constitution`) -> PASS
+- [x] 2. Product Validation & PRP (`02-lean-product-prp`) -> PASS
+- [x] 3. Architecture Validation (`03-supabase-architecture-review`) -> PASS
+- [x] 4. Code Generation (Implementação) -> PASS
+- [x] 5. QA Validation (`04-qa-production-review`) -> PASS
+- [x] 6. Release Decision -> APPROVED
+
+

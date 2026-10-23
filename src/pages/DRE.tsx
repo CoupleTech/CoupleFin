@@ -17,7 +17,8 @@ const ESTRUTURA_DRE = [
   { id: 'lucro_bruto', nome: '(=) Lucro Bruto', tipo: 'totalizador', calcula: ['receita_liquida', 'custos'] },
   { id: 'despesas_operacionais', nome: '(-) Despesas Operacionais / Administrativas', tipo: 'negativa', grupos: ['despesas_operacionais', 'despesas_administrativas', 'operacional', 'administrativo'] },
   { id: 'despesas_financeiras', nome: '(-) Despesas Financeiras', tipo: 'negativa', grupos: ['despesas_financeiras', 'financeiro'] },
-  { id: 'resultado_antes_impostos', nome: '(=) Resultado antes de Impostos', tipo: 'totalizador', calcula: ['lucro_bruto', 'despesas_operacionais', 'despesas_financeiras'] },
+  { id: 'despesas_intercompany', nome: '(-) Despesas Intercompany', tipo: 'negativa', grupos: ['despesas_intercompany', 'intercompany'] },
+  { id: 'resultado_antes_impostos', nome: '(=) Resultado antes de Impostos', tipo: 'totalizador', calcula: ['lucro_bruto', 'despesas_operacionais', 'despesas_financeiras', 'despesas_intercompany'] },
   { id: 'impostos_lucro', nome: '(-) Impostos sobre o Lucro', tipo: 'negativa', grupos: ['impostos_lucro', 'irpj', 'csll'] },
   { id: 'resultado_liquido', nome: '(=) Resultado Líquido', tipo: 'totalizador', calcula: ['resultado_antes_impostos', 'impostos_lucro'] },
 ]
@@ -31,6 +32,8 @@ export default function DRE() {
   const [mesAno, setMesAno] = useState(format(new Date(), 'yyyy-MM'))
   
   const [dadosDRE, setDadosDRE] = useState<any>({})
+  const [detalhesIntercompany, setDetalhesIntercompany] = useState<any[]>([])
+  const [expandirIntercompany, setExpandirIntercompany] = useState(true)
 
   useEffect(() => {
     if (empresaAtivaId) {
@@ -90,15 +93,25 @@ export default function DRE() {
     
     // Soma os lançamentos por grupo_dre
     const gruposSoma: any = {}
+    const itensIntercompany: any[] = []
 
     lancamentos.forEach(lanc => {
-      const grupoDre = lanc.tipo_despesa?.grupo_dre?.toLowerCase() || 'sem_grupo'
-      
+      // Verifica se é compra intercompany faturada por outra empresa
+      const isIntercompany = Boolean(lanc.empresa_origem_id && lanc.empresa_origem_id !== lanc.empresa_id)
       const valor = Number(lanc.valor) || 0
-      
-      if (!gruposSoma[grupoDre]) gruposSoma[grupoDre] = 0
-      gruposSoma[grupoDre] += valor
+
+      if (isIntercompany) {
+        if (!gruposSoma['despesas_intercompany']) gruposSoma['despesas_intercompany'] = 0
+        gruposSoma['despesas_intercompany'] += valor
+        itensIntercompany.push(lanc)
+      } else {
+        const grupoDre = lanc.tipo_despesa?.grupo_dre?.toLowerCase() || 'sem_grupo'
+        if (!gruposSoma[grupoDre]) gruposSoma[grupoDre] = 0
+        gruposSoma[grupoDre] += valor
+      }
     })
+
+    setDetalhesIntercompany(itensIntercompany)
 
     ESTRUTURA_DRE.forEach(item => {
       if (item.tipo === 'positiva' || item.tipo === 'negativa') {
@@ -129,7 +142,7 @@ export default function DRE() {
   }
 
   const exportarExcel = () => {
-    const ws_data = [
+    const ws_data: any[][] = [
       ['Demonstração do Resultado do Exercício (DRE)'],
       [`Período: ${mesAno} | Visão: ${visao.toUpperCase()} | Modo: ${modo.toUpperCase()}`],
       [],
@@ -139,6 +152,15 @@ export default function DRE() {
     ESTRUTURA_DRE.forEach(item => {
       const valor = dadosDRE[item.id] || 0
       ws_data.push([item.nome, valor])
+
+      // Se for intercompany e houver lançamentos discriminados, inclui na planilha
+      if (item.id === 'despesas_intercompany' && detalhesIntercompany.length > 0) {
+        detalhesIntercompany.forEach(det => {
+          const empOrigem = empresas.find(e => e.id === det.empresa_origem_id)
+          const nomeOrigem = empOrigem?.nome_fantasia || empOrigem?.razao_social || 'Outra Empresa'
+          ws_data.push([`   ↳ ${det.descricao || 'Despesa'} (Faturado por: ${nomeOrigem})`, -(Number(det.valor) || 0)])
+        })
+      }
     })
 
     const ws = XLSX.utils.aoa_to_sheet(ws_data)
@@ -229,13 +251,53 @@ export default function DRE() {
               {ESTRUTURA_DRE.map((item) => {
                 const valor = dadosDRE[item.id] || 0
                 const isTotal = item.tipo === 'totalizador'
+                const isIntercompanyRow = item.id === 'despesas_intercompany'
+
                 return (
-                  <tr key={item.id} className={`border-b border-slate-100 last:border-0 ${isTotal ? 'bg-slate-50/80 font-bold text-slate-900' : ''}`}>
-                    <td className="py-4 px-6">{item.nome}</td>
-                    <td className={`py-4 px-6 text-right ${valor < 0 ? 'text-red-600' : isTotal && valor > 0 ? 'text-emerald-600' : ''}`}>
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}
-                    </td>
-                  </tr>
+                  <div key={item.id} className="contents">
+                    <tr className={`border-b border-slate-100 last:border-0 ${isTotal ? 'bg-slate-50/80 font-bold text-slate-900' : ''} ${isIntercompanyRow && valor !== 0 ? 'bg-amber-50/20' : ''}`}>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <span>{item.nome}</span>
+                          {isIntercompanyRow && detalhesIntercompany.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandirIntercompany(!expandirIntercompany)}
+                              className="text-xs text-amber-700 hover:text-amber-900 font-normal underline ml-2 no-print"
+                            >
+                              {expandirIntercompany ? '(Ocultar detalhes)' : `(Ver ${detalhesIntercompany.length} itens)`}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className={`py-4 px-6 text-right ${valor < 0 ? 'text-red-600' : isTotal && valor > 0 ? 'text-emerald-600' : ''}`}>
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}
+                      </td>
+                    </tr>
+
+                    {/* Sub-linhas com detalhamento dos lançamentos Intercompany */}
+                    {isIntercompanyRow && expandirIntercompany && detalhesIntercompany.length > 0 && (
+                      detalhesIntercompany.map((det, idx) => {
+                        const empOrigem = empresas.find(e => e.id === det.empresa_origem_id)
+                        const nomeOrigem = empOrigem?.nome_fantasia || empOrigem?.razao_social || 'Outra Empresa'
+                        const valDet = Number(det.valor) || 0
+
+                        return (
+                          <tr key={`intercompany-${det.id || idx}`} className="bg-amber-50/40 text-xs border-b border-amber-100/50">
+                            <td className="py-2.5 px-6 pl-10 text-slate-600">
+                              <span className="font-medium text-slate-800">{det.descricao || 'Despesa repassada'}</span>
+                              <span className="ml-2 text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
+                                Faturado por: {nomeOrigem}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-6 text-right text-red-500 font-mono">
+                              -{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valDet)}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </div>
                 )
               })}
             </tbody>

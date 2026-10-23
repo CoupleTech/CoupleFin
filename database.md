@@ -146,7 +146,7 @@ CREATE TABLE lancamentos (
   status_pagamento text DEFAULT 'pendente' CHECK (status_pagamento IN ('pendente', 'pago', 'atrasado', 'pago parcialmente')),
   descricao text,
   observacoes text,
-  empresa_origem_id uuid REFERENCES empresas(id),
+  empresa_origem_id uuid REFERENCES empresas(id), -- Transferências entre empresas e faturamento de compras intercompany
   empresa_destino_id uuid REFERENCES empresas(id),
   conta_origem_id uuid REFERENCES contas(id),
   conta_destino_id uuid REFERENCES contas(id),

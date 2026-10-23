@@ -111,6 +111,20 @@ formato real usado pelos municípios/estados onde o grupo opera.
 **[COMPLEMENTO]** Validar a chave de acesso (44 dígitos numéricos, com dígito
 verificador — módulo 11) antes de salvar, para evitar erro de digitação/leitura.
 
+### 4.3.1 Compras Intercompany e Rateio entre Empresas **[Fase 16]**
+Trata compras faturadas no CNPJ de uma empresa (ex: Atacado) cuja mercadoria é destinada a outra empresa do grupo (ex: Mercado) por estratégia tributária/comercial, com conta bancária unificada do grupo:
+- **Destino da Compra**:
+  1. *Própria Empresa*: operação padrão.
+  2. *Outra Empresa (Intercompany 100%)*: o usuário na empresa faturada seleciona a empresa destinatária.
+  3. *Rateio entre Empresas*: divide valores/percentuais entre duas ou mais empresas do grupo.
+- **Responsabilidade Financeira (Contas a Pagar)**:
+  - O boleto/pendência financeira é gerado **exclusivamente na empresa destinatária** (`empresa_id = destinatária`), sendo ela quem realiza a **baixa do pagamento**.
+  - Na empresa faturadora/compradora original, fica gravado o histórico fiscal através do campo `empresa_origem_id`, sem gerar cobrança duplicada no Contas a Pagar.
+- **Impacto no DRE**:
+  - Na empresa destinatária: a despesa entra na linha destacada **`(-) Despesas Intercompany`**, com identificação da empresa faturadora original.
+  - Na empresa faturadora: a despesa repassada **não impacta** o resultado operacional.
+  - No consolidado do grupo: as despesas somam normalmente sem duplicação.
+
 ### 4.4 Lançamento Manual
 Para despesas sem nota fiscal associada. Subtipos:
 - Salários
@@ -141,6 +155,7 @@ explicitamente o controle de vencimento — essencial em qualquer sistema financ
   empresa, vencimento, centro de custo ou fornecedor.
 - **Baixa de pagamento** (marcar como pago, com data de pagamento efetiva — pode ser
   diferente da data de vencimento). **[Fase 14]** Durante a baixa, é possível registrar `valor_acrescimo` (juros, multas) e `valor_desconto` (abatimentos), mantendo o valor original intacto e somando no valor total pago.
+- **[Fase 16 - Intercompany]**: Boletos originados de compras intercompany são baixados pela empresa destinatária, trazendo a indicação visual de qual empresa realizou a compra faturada.
 - **[DECISÃO PENDENTE]** Notificações/alertas de vencimento próximo ou atrasado (na
   tela/dashboard e, opcionalmente, por e-mail).
 
@@ -187,8 +202,9 @@ do sistema e logo variável por empresa — confirmar.
 - Filtro por **empresa selecionada** ou **visão geral (grupo consolidado)**
 - Estrutura padrão de DRE a ser seguida (ver seção 5.7 para o de/para de classificação):
   Receita Bruta → Deduções → Receita Líquida → Custos → Lucro Bruto → Despesas
-  Operacionais/Administrativas → Despesas Financeiras → Resultado antes de
+  Operacionais/Administrativas → Despesas Financeiras → **(-) Despesas Intercompany** → Resultado antes de
   Impostos → Resultado Líquido
+  - **[Fase 16 - Despesas Intercompany]:** Compras faturadas por uma empresa do grupo cujo consumo pertence a outra (ou rateadas). No DRE da empresa destinatária, são exibidas em uma linha segregada com detalhamento da empresa de faturamento original. No DRE da empresa faturada, não entram como despesa operacional (evitando duplicidade).
 - Exportação: **PDF**, **Excel** e **Impressão direta**
 - O PDF/impressão deve exibir a logo e as cores da empresa selecionada (ou do grupo, no
   modo consolidado)
