@@ -111,6 +111,8 @@ formato real usado pelos municípios/estados onde o grupo opera.
 **[COMPLEMENTO]** Validar a chave de acesso (44 dígitos numéricos, com dígito
 verificador — módulo 11) antes de salvar, para evitar erro de digitação/leitura.
 
+**Modal de Detalhes e Edição:** Quando o lançamento for do tipo `nota_fiscal`, o modal de detalhes exibe os campos de "Chave de Acesso" (com botão de cópia rápida para clipboard) e "Número do Documento", permitindo consulta e atualização dos dados fiscais. O modal possui limitação de altura (`max-h-[90vh]`) com rolagem interna (`overflow-y-auto`), garantindo que o cabeçalho com botão fechar e o rodapé de ações permaneçam sempre acessíveis em qualquer resolução.
+
 ### 4.3.1 Compras Intercompany e Rateio entre Empresas **[Fase 16]**
 Trata compras faturadas no CNPJ de uma empresa (ex: Atacado) cuja mercadoria é destinada a outra empresa do grupo (ex: Mercado) por estratégia tributária/comercial, com conta bancária unificada do grupo:
 - **Destino da Compra**:

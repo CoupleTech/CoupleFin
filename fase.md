@@ -347,6 +347,14 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 - [x] 3. Architecture Validation (`03-supabase-architecture-review`) -> PASS
 - [x] 4. Code Generation (Implementação) -> PASS
 - [x] 5. QA Validation (`04-qa-production-review`) -> PASS
-- [x] 6. Release Decision -> APPROVED
+---
+
+### Melhorias Contínuas e Refinamentos de UI/UX
+- **Exibição e Edição de Chave de Nota Fiscal no Modal de Detalhes:**
+  - Adicionado campo condicional para `tipo === 'nota_fiscal'` com a **Chave de Acesso** (44 dígitos em fonte monoespaçada) e **Número do Documento** no modal "Detalhes e Edição do Lançamento" ([Financeiro.tsx](file:///d:/Repositorios/coupleFin/src/pages/Financeiro.tsx)).
+  - Adicionado botão de cópia rápida para a área de transferência com feedback visual e toast.
+  - Sincronização e persistência no banco Supabase (`lancamentos.chave_acesso` e `lancamentos.numero_documento`).
+  - Correção de responsividade do [Modal.tsx](file:///d:/Repositorios/coupleFin/src/components/ui/Modal.tsx): adicionado limite de altura `max-h-[90vh]` com rolagem interna vertical (`overflow-y-auto`) e fixação do cabeçalho com botão fechar (X) e botões de ação sticky, impedindo que o modal extrapole a tela.
+
 
 

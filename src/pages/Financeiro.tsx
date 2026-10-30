@@ -16,7 +16,9 @@ import {
   Clock,
   CheckCircle,
   Ban,
-  Trash2
+  Trash2,
+  Copy,
+  Check
 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
@@ -38,6 +40,8 @@ interface Lancamento {
   status: string
   descricao: string
   observacoes?: string
+  chave_acesso?: string | null
+  numero_documento?: string | null
   fornecedores?: { razao_social: string }
   centro_custo?: { nome: string }
   fornecedor_id?: string
@@ -86,12 +90,15 @@ export default function Financeiro() {
     valor: '',
     data_competencia: '',
     data_vencimento: '',
+    chave_acesso: '',
+    numero_documento: '',
     fornecedor_id: '',
     tipo_despesa_id: '',
     centro_custo_id: '',
     conta_id: '',
     destino_pagamento_id: ''
   })
+  const [copiadoChave, setCopiadoChave] = useState(false)
   
   const [dataBaixa, setDataBaixa] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [valorAcrescimo, setValorAcrescimo] = useState<number | ''>('')
@@ -341,6 +348,14 @@ export default function Financeiro() {
     setIsModalEstornoOpen(true)
   }
 
+  const handleCopiarChave = (chave: string) => {
+    if (!chave) return
+    navigator.clipboard.writeText(chave)
+    setCopiadoChave(true)
+    toast.success('Chave de acesso copiada!')
+    setTimeout(() => setCopiadoChave(false), 2000)
+  }
+
   const handleSalvarDetalhes = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!lancamentoSelecionado || !user || !empresaAtivaId) return
@@ -354,7 +369,7 @@ export default function Financeiro() {
       return
     }
 
-    const dataAtualizacao = { 
+    const dataAtualizacao: Record<string, unknown> = { 
       valor: Number(editForm.valor),
       descricao: editForm.descricao.trim(),
       observacoes: editForm.observacoes || null,
@@ -365,6 +380,11 @@ export default function Financeiro() {
       centro_custo_id: editForm.centro_custo_id || null,
       conta_id: editForm.conta_id || null,
       destino_pagamento_id: editForm.destino_pagamento_id || null
+    }
+
+    if (lancamentoSelecionado.tipo === 'nota_fiscal') {
+      dataAtualizacao.chave_acesso = editForm.chave_acesso.trim() || null
+      dataAtualizacao.numero_documento = editForm.numero_documento.trim() || null
     }
 
     const { error } = await supabase.from('lancamentos')
@@ -400,6 +420,8 @@ export default function Financeiro() {
       valor: l.valor ? Number(l.valor).toFixed(2) : '',
       data_competencia: l.data_competencia || '',
       data_vencimento: l.data_vencimento || l.data_competencia || '',
+      chave_acesso: l.chave_acesso || '',
+      numero_documento: l.numero_documento || '',
       fornecedor_id: l.fornecedor_id || '',
       tipo_despesa_id: l.tipo_despesa_id || '',
       centro_custo_id: l.centro_custo_id || '',
@@ -789,12 +811,12 @@ export default function Financeiro() {
         isOpen={isModalDetalhesOpen}
         onClose={() => setIsModalDetalhesOpen(false)}
         title="Detalhes e Edição do Lançamento"
-        size="lg"
+        size="xl"
       >
         {lancamentoSelecionado && (
-          <form onSubmit={handleSalvarDetalhes} className="space-y-6 text-sm text-slate-700">
+          <form onSubmit={handleSalvarDetalhes} className="space-y-5 text-sm text-slate-700">
             {/* INFORMAÇÕES GERAIS E STATUS (Read-only) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl mb-4 border border-slate-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
               <div>
                 <span className="block text-xs text-slate-500 font-medium mb-1">Status do Lançamento</span>
                 <Badge variant={lancamentoSelecionado.status === 'estornado' ? 'neutral' : 'success'} className="capitalize">{lancamentoSelecionado.status}</Badge>
@@ -847,15 +869,54 @@ export default function Financeiro() {
                   onChange={(e) => setEditForm(prev => ({ ...prev, data_vencimento: e.target.value }))}
                   required
                 />
+
+                {lancamentoSelecionado.tipo === 'nota_fiscal' && (
+                  <>
+                    <div className="md:col-span-2 space-y-1.5">
+                      <label className="block text-sm font-medium text-slate-700">Chave de Acesso</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={editForm.chave_acesso}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, chave_acesso: e.target.value }))}
+                          placeholder="44 dígitos numéricos da NFe/NFCe ou código da NFS-e"
+                          className="min-w-0 appearance-none w-full max-w-full border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-2.5 text-sm font-mono bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        />
+                        {editForm.chave_acesso && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => handleCopiarChave(editForm.chave_acesso)}
+                            title="Copiar Chave de Acesso"
+                            icon={copiadoChave ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                          >
+                            {copiadoChave ? 'Copiado!' : 'Copiar'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Input
+                        label="Número do Documento (NFe / Danfe / NFS-e)"
+                        type="text"
+                        value={editForm.numero_documento}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, numero_documento: e.target.value }))}
+                        placeholder="Ex: 0001234"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="grid grid-cols-1 mt-4">
+              <div className="grid grid-cols-1 mt-3">
                 <div className="flex flex-col space-y-1">
                   <label className="text-sm font-medium text-slate-700">Observações Internas (Opcional)</label>
                   <textarea
+                    rows={2}
                     value={editForm.observacoes}
                     onChange={(e) => setEditForm(prev => ({ ...prev, observacoes: e.target.value }))}
                     placeholder="Notas adicionais para a equipe ou auditoria..."
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[100px] resize-y text-sm"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[60px] resize-y text-sm"
                   />
                 </div>
               </div>
@@ -920,8 +981,8 @@ export default function Financeiro() {
               </div>
             </div>
 
-            {/* BOTÕES */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+            {/* BOTÕES COM BARRA FIXA */}
+            <div className="sticky -bottom-6 bg-white py-3 -mx-6 px-6 border-t border-slate-100 flex justify-end gap-3 z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] mt-6">
               <Button type="button" variant="ghost" onClick={() => setIsModalDetalhesOpen(false)}>Cancelar</Button>
               <Button type="submit" loading={isSubmitting}>Salvar Alterações</Button>
             </div>
