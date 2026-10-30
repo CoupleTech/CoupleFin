@@ -204,9 +204,11 @@ do sistema e logo variável por empresa — confirmar.
 - Filtro por **empresa selecionada** ou **visão geral (grupo consolidado)**
 - Estrutura padrão de DRE a ser seguida (ver seção 5.7 para o de/para de classificação):
   Receita Bruta → Deduções → Receita Líquida → Custos → Lucro Bruto → Despesas
-  Operacionais/Administrativas → Despesas Financeiras → **(-) Despesas Intercompany** → Resultado antes de
+  Operacionais/Administrativas → Despesas Financeiras → **(-) Despesas Intercompany** → **(-) Despesas Não Classificadas** → Resultado antes de
   Impostos → Resultado Líquido
   - **[Fase 16 - Despesas Intercompany]:** Compras faturadas por uma empresa do grupo cujo consumo pertence a outra (ou rateadas). No DRE da empresa destinatária, são exibidas em uma linha segregada com detalhamento da empresa de faturamento original. No DRE da empresa faturada, não entram como despesa operacional (evitando duplicidade).
+  - **[Auditoria de Classificação - Despesas Não Classificadas]:** Lançamentos financeiros cadastrados sem tipo de despesa ou com classificação pendente são automaticamente somados na linha destacada `(-) Despesas Não Classificadas`. O DRE exibe um alerta de auditoria com botão para expandir e auditar cada lançamento individualmente, e os inclui no Resultado Líquido para assegurar exatidão contábil total com o saldo bancário.
+  - **[Compatibilidade de Grupos]:** Mapeamento bidirecional e inclusivo para todos os grupos cadastráveis: `custo` (Custo Direto), `despesa_administrativa` (Despesa Administrativa), `despesa_financeira` (Despesa Financeira), `despesa_operacional` (Despesa Operacional), `imposto` (Deduções da Receita) e `receita` (Receita Bruta).
 - Exportação: **PDF**, **Excel** e **Impressão direta**
 - O PDF/impressão deve exibir a logo e as cores da empresa selecionada (ou do grupo, no
   modo consolidado)

@@ -355,6 +355,10 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
   - Adicionado botão de cópia rápida para a área de transferência com feedback visual e toast.
   - Sincronização e persistência no banco Supabase (`lancamentos.chave_acesso` e `lancamentos.numero_documento`).
   - Correção de responsividade do [Modal.tsx](file:///d:/Repositorios/coupleFin/src/components/ui/Modal.tsx): adicionado limite de altura `max-h-[90vh]` com rolagem interna vertical (`overflow-y-auto`) e fixação do cabeçalho com botão fechar (X) e botões de ação sticky, impedindo que o modal extrapole a tela.
+- **Aprimoramento Contábil e Auditoria no DRE ([DRE.tsx](file:///d:/Repositorios/coupleFin/src/pages/DRE.tsx)):**
+  - Mapeamento bidirecional completo para os 6 grupos do dropdown de Tipos de Despesa (`custo`, `despesa_administrativa`, `despesa_financeira`, `despesa_operacional`, `imposto`, `receita`), eliminando a perda de lançamentos por divergências de plural/singular ou masculino/feminino.
+  - Implementação da linha **`(-) Despesas Não Classificadas`**, com alerta de auditoria em tela, botão para expandir e auditar lançamentos órfãos, e integração no cálculo do Resultado Líquido e na exportação em Excel.
+
 
 
 

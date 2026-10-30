@@ -4,21 +4,22 @@ import Layout from '../components/layout/Layout'
 import { PageHeader, Select, Button, EmptyState } from '../components/ui'
 import { PageLoading } from '../components/ui/LoadingSpinner'
 import { useAppStore } from '../store/useAppStore'
-import { Calculator, Download, Printer } from 'lucide-react'
+import { Calculator, Download, Printer, AlertCircle } from 'lucide-react'
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns'
 import * as XLSX from 'xlsx'
 
-// Estrutura do DRE de acordo com a documentação
+// Estrutura do DRE com suporte completo a todos os grupos cadastráveis
 const ESTRUTURA_DRE = [
   { id: 'receita_bruta', nome: '(+) Receita Bruta', tipo: 'positiva', grupos: ['receita_bruta', 'receitas', 'receita'] },
-  { id: 'deducoes', nome: '(-) Deduções da Receita', tipo: 'negativa', grupos: ['deducoes_receita', 'deducoes', 'impostos_faturamento'] },
+  { id: 'deducoes', nome: '(-) Deduções da Receita', tipo: 'negativa', grupos: ['deducoes_receita', 'deducoes', 'impostos_faturamento', 'imposto', 'tributo'] },
   { id: 'receita_liquida', nome: '(=) Receita Líquida', tipo: 'totalizador', calcula: ['receita_bruta', 'deducoes'] },
-  { id: 'custos', nome: '(-) Custos (CPV/CSV)', tipo: 'negativa', grupos: ['custos', 'cpv', 'csv'] },
+  { id: 'custos', nome: '(-) Custos (CPV/CSV)', tipo: 'negativa', grupos: ['custos', 'custo', 'cpv', 'csv', 'custo_direto', 'custo direto'] },
   { id: 'lucro_bruto', nome: '(=) Lucro Bruto', tipo: 'totalizador', calcula: ['receita_liquida', 'custos'] },
-  { id: 'despesas_operacionais', nome: '(-) Despesas Operacionais / Administrativas', tipo: 'negativa', grupos: ['despesas_operacionais', 'despesas_administrativas', 'operacional', 'administrativo'] },
-  { id: 'despesas_financeiras', nome: '(-) Despesas Financeiras', tipo: 'negativa', grupos: ['despesas_financeiras', 'financeiro'] },
+  { id: 'despesas_operacionais', nome: '(-) Despesas Operacionais / Administrativas', tipo: 'negativa', grupos: ['despesas_operacionais', 'despesa_operacional', 'despesas_administrativas', 'despesa_administrativa', 'operacional', 'administrativo', 'administrativa'] },
+  { id: 'despesas_financeiras', nome: '(-) Despesas Financeiras', tipo: 'negativa', grupos: ['despesas_financeiras', 'despesa_financeira', 'financeiro', 'financeira'] },
   { id: 'despesas_intercompany', nome: '(-) Despesas Intercompany', tipo: 'negativa', grupos: ['despesas_intercompany', 'intercompany'] },
-  { id: 'resultado_antes_impostos', nome: '(=) Resultado antes de Impostos', tipo: 'totalizador', calcula: ['lucro_bruto', 'despesas_operacionais', 'despesas_financeiras', 'despesas_intercompany'] },
+  { id: 'despesas_nao_classificadas', nome: '(-) Despesas Não Classificadas', tipo: 'negativa', grupos: ['despesas_nao_classificadas', 'sem_grupo'] },
+  { id: 'resultado_antes_impostos', nome: '(=) Resultado antes de Impostos', tipo: 'totalizador', calcula: ['lucro_bruto', 'despesas_operacionais', 'despesas_financeiras', 'despesas_intercompany', 'despesas_nao_classificadas'] },
   { id: 'impostos_lucro', nome: '(-) Impostos sobre o Lucro', tipo: 'negativa', grupos: ['impostos_lucro', 'irpj', 'csll'] },
   { id: 'resultado_liquido', nome: '(=) Resultado Líquido', tipo: 'totalizador', calcula: ['resultado_antes_impostos', 'impostos_lucro'] },
 ]
@@ -31,9 +32,11 @@ export default function DRE() {
   const [modo, setModo] = useState('empresa') // empresa, consolidado
   const [mesAno, setMesAno] = useState(format(new Date(), 'yyyy-MM'))
   
-  const [dadosDRE, setDadosDRE] = useState<any>({})
+  const [dadosDRE, setDadosDRE] = useState<Record<string, number>>({})
   const [detalhesIntercompany, setDetalhesIntercompany] = useState<any[]>([])
   const [expandirIntercompany, setExpandirIntercompany] = useState(true)
+  const [detalhesNaoClassificados, setDetalhesNaoClassificados] = useState<any[]>([])
+  const [expandirNaoClassificadas, setExpandirNaoClassificadas] = useState(true)
 
   useEffect(() => {
     if (empresaAtivaId) {
@@ -89,40 +92,72 @@ export default function DRE() {
 
   const processarDRE = (lancamentos: any[]) => {
     // Inicializa a estrutura de dados
-    const valores: any = {}
+    const valores: Record<string, number> = {}
     
     // Soma os lançamentos por grupo_dre
-    const gruposSoma: any = {}
+    const gruposSoma: Record<string, number> = {}
     const itensIntercompany: any[] = []
+    const itensNaoClassificados: any[] = []
 
     lancamentos.forEach(lanc => {
+      // Ignora transferências internas entre contas/empresas (movimentações financeiras neutras no DRE)
+      if (lanc.subtipo === 'transferencia_conta' || lanc.subtipo === 'transferencia_empresa') {
+        return
+      }
+
+      const valor = Number(lanc.valor) || 0
+      if (valor === 0) return
+
       // Verifica se é compra intercompany faturada por outra empresa
       const isIntercompany = Boolean(lanc.empresa_origem_id && lanc.empresa_origem_id !== lanc.empresa_id)
-      const valor = Number(lanc.valor) || 0
 
       if (isIntercompany) {
         if (!gruposSoma['despesas_intercompany']) gruposSoma['despesas_intercompany'] = 0
         gruposSoma['despesas_intercompany'] += valor
         itensIntercompany.push(lanc)
-      } else {
-        const grupoDre = lanc.tipo_despesa?.grupo_dre?.toLowerCase() || 'sem_grupo'
-        if (!gruposSoma[grupoDre]) gruposSoma[grupoDre] = 0
-        gruposSoma[grupoDre] += valor
+        return
+      }
+
+      const grupoDreOriginal = lanc.tipo_despesa?.grupo_dre
+      if (!grupoDreOriginal || typeof grupoDreOriginal !== 'string' || !grupoDreOriginal.trim()) {
+        // Lançamento sem tipo de despesa ou sem grupo_dre configurado
+        if (!gruposSoma['despesas_nao_classificadas']) gruposSoma['despesas_nao_classificadas'] = 0
+        gruposSoma['despesas_nao_classificadas'] += valor
+        itensNaoClassificados.push(lanc)
+        return
+      }
+
+      const grupoDre = grupoDreOriginal.toLowerCase().trim()
+
+      // Testa se o grupo casa com alguma linha oficial do DRE
+      let encontrouGrupo = false
+      for (const item of ESTRUTURA_DRE) {
+        if (item.grupos && item.id !== 'despesas_intercompany' && item.id !== 'despesas_nao_classificadas') {
+          const match = item.grupos.some(g => grupoDre === g || grupoDre.includes(g) || g.includes(grupoDre))
+          if (match) {
+            encontrouGrupo = true
+            if (!gruposSoma[item.id]) gruposSoma[item.id] = 0
+            gruposSoma[item.id] += valor
+            break
+          }
+        }
+      }
+
+      if (!encontrouGrupo) {
+        // Possui tipo de despesa, mas com grupo não reconhecido
+        if (!gruposSoma['despesas_nao_classificadas']) gruposSoma['despesas_nao_classificadas'] = 0
+        gruposSoma['despesas_nao_classificadas'] += valor
+        itensNaoClassificados.push(lanc)
       }
     })
 
     setDetalhesIntercompany(itensIntercompany)
+    setDetalhesNaoClassificados(itensNaoClassificados)
 
+    // Atribui os valores finais de cada linha positiva ou negativa
     ESTRUTURA_DRE.forEach(item => {
       if (item.tipo === 'positiva' || item.tipo === 'negativa') {
-        let soma = 0
-        Object.keys(gruposSoma).forEach(k => {
-          // Se o grupo da despesa (k) bater com algum dos grupos esperados (g), soma e para
-          const match = item.grupos?.some(g => k.includes(g))
-          if (match) {
-            soma += gruposSoma[k]
-          }
-        })
+        const soma = gruposSoma[item.id] || 0
         valores[item.id] = item.tipo === 'negativa' ? -soma : soma
       }
     })
@@ -161,6 +196,14 @@ export default function DRE() {
           ws_data.push([`   ↳ ${det.descricao || 'Despesa'} (Faturado por: ${nomeOrigem})`, -(Number(det.valor) || 0)])
         })
       }
+
+      // Se for despesas não classificadas, discrimina na planilha
+      if (item.id === 'despesas_nao_classificadas' && detalhesNaoClassificados.length > 0) {
+        detalhesNaoClassificados.forEach(det => {
+          const dt = det.data_competencia || det.data_pagamento || ''
+          ws_data.push([`   ↳ ${det.descricao || 'Lançamento sem classificação'} (${dt})`, -(Number(det.valor) || 0)])
+        })
+      }
     })
 
     const ws = XLSX.utils.aoa_to_sheet(ws_data)
@@ -179,6 +222,21 @@ export default function DRE() {
         title="DRE (Demonstração do Resultado)"
         subtitle="Analise a performance financeira e contábil do seu negócio"
       />
+
+      {/* Alerta de Auditoria se houver despesas sem classificação */}
+      {detalhesNaoClassificados.length > 0 && (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-6 flex items-start gap-3 text-rose-800 no-print">
+          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-semibold text-rose-900">
+              Atenção: Existem {detalhesNaoClassificados.length} lançamento(s) sem classificação contábil neste período!
+            </p>
+            <p className="text-rose-700 mt-0.5">
+              Eles foram somados na linha <strong>"(-) Despesas Não Classificadas"</strong> do DRE para garantir a exatidão do Resultado Líquido.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end no-print">
@@ -252,13 +310,18 @@ export default function DRE() {
                 const valor = dadosDRE[item.id] || 0
                 const isTotal = item.tipo === 'totalizador'
                 const isIntercompanyRow = item.id === 'despesas_intercompany'
+                const isNaoClassificadaRow = item.id === 'despesas_nao_classificadas'
 
                 return (
                   <div key={item.id} className="contents">
-                    <tr className={`border-b border-slate-100 last:border-0 ${isTotal ? 'bg-slate-50/80 font-bold text-slate-900' : ''} ${isIntercompanyRow && valor !== 0 ? 'bg-amber-50/20' : ''}`}>
+                    <tr className={`border-b border-slate-100 last:border-0 ${isTotal ? 'bg-slate-50/80 font-bold text-slate-900' : ''} ${isIntercompanyRow && valor !== 0 ? 'bg-amber-50/20' : ''} ${isNaoClassificadaRow && valor !== 0 ? 'bg-rose-50/25' : ''}`}>
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
-                          <span>{item.nome}</span>
+                          <span className={isNaoClassificadaRow && valor !== 0 ? 'text-rose-900 font-medium' : ''}>
+                            {item.nome}
+                          </span>
+
+                          {/* Botão de expansão para Intercompany */}
                           {isIntercompanyRow && detalhesIntercompany.length > 0 && (
                             <button
                               type="button"
@@ -268,9 +331,20 @@ export default function DRE() {
                               {expandirIntercompany ? '(Ocultar detalhes)' : `(Ver ${detalhesIntercompany.length} itens)`}
                             </button>
                           )}
+
+                          {/* Botão de expansão para Não Classificadas */}
+                          {isNaoClassificadaRow && detalhesNaoClassificados.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandirNaoClassificadas(!expandirNaoClassificadas)}
+                              className="text-xs text-rose-700 hover:text-rose-900 font-normal underline ml-2 no-print"
+                            >
+                              {expandirNaoClassificadas ? '(Ocultar detalhes)' : `(Ver ${detalhesNaoClassificados.length} itens pendentes)`}
+                            </button>
+                          )}
                         </div>
                       </td>
-                      <td className={`py-4 px-6 text-right ${valor < 0 ? 'text-red-600' : isTotal && valor > 0 ? 'text-emerald-600' : ''}`}>
+                      <td className={`py-4 px-6 text-right ${isNaoClassificadaRow && valor !== 0 ? 'text-rose-600 font-semibold' : valor < 0 ? 'text-red-600' : isTotal && valor > 0 ? 'text-emerald-600' : ''}`}>
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)}
                       </td>
                     </tr>
@@ -291,6 +365,33 @@ export default function DRE() {
                               </span>
                             </td>
                             <td className="py-2.5 px-6 text-right text-red-500 font-mono">
+                              -{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valDet)}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+
+                    {/* Sub-linhas com detalhamento dos lançamentos Não Classificados */}
+                    {isNaoClassificadaRow && expandirNaoClassificadas && detalhesNaoClassificados.length > 0 && (
+                      detalhesNaoClassificados.map((det, idx) => {
+                        const valDet = Number(det.valor) || 0
+                        const dataInfo = det.data_competencia || det.data_pagamento || ''
+
+                        return (
+                          <tr key={`nao-classificado-${det.id || idx}`} className="bg-rose-50/40 text-xs border-b border-rose-100/50">
+                            <td className="py-2.5 px-6 pl-10 text-slate-600">
+                              <span className="font-medium text-slate-800">{det.descricao || 'Lançamento sem descrição'}</span>
+                              <span className="ml-2 text-rose-800 bg-rose-100 border border-rose-200 px-1.5 py-0.5 rounded text-[10px]">
+                                Pendente de Classificação
+                              </span>
+                              {dataInfo && (
+                                <span className="ml-2 text-slate-400 text-[10px]">
+                                  {dataInfo}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-6 text-right text-rose-600 font-mono font-medium">
                               -{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valDet)}
                             </td>
                           </tr>
