@@ -367,6 +367,11 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
   - **Período Flexível e Busca Rápida:** Suporte a Mês Fechado e Período Livre (Data Inicial e Data Final), além de campo de busca instantânea na listagem.
   - **Correção Definitiva da Impressão/PDF:** Solução do bug do `tfoot` repetindo em cada página intermediária (`tfoot { display: table-row-group !important; }`), desbloqueio do container de scroll (`overflow: visible !important; height: auto !important;`), quebra limpa de linhas (`break-inside: avoid;`) e cabeçalho oficial timbrado com logo, dados cadastrais e metadados.
   - **Exportação Excel Avançada:** Geração de planilha com duas abas estruturadas (Aba 1: Resumo Sintético; Aba 2: Detalhamento Analítico).
+- **Correção de Cache e Deploy na Vercel ([vercel.json](file:///d:/Repositorios/coupleFin/vercel.json), [vite.config.ts](file:///d:/Repositorios/coupleFin/vite.config.ts) e [index.html](file:///d:/Repositorios/coupleFin/index.html)):**
+  - **Headers de Cache HTTP:** Adicionado `Cache-Control: no-cache, no-store, must-revalidate` para `index.html`, `sw.js` e `manifest.webmanifest`, impedindo que os navegadores fiquem presos a hashes antigos de bundle após novo deploy.
+  - **Regra de Rewrite Segura na Vercel:** Exclusão explícita de assets e arquivos estáticos da regra de fallback SPA do `vercel.json`, evitando que requisições a arquivos `.js` ou `.css` retornem `index.html` (MIME text/html).
+  - **Workbox PWA Navigate Denylist:** Configurado `navigateFallbackDenylist` para `/assets/` e extensões estáticas, com `clientsClaim: true` e `skipWaiting: true`, eliminando o erro de *Strict MIME type checking* durante transições de versão.
+  - **Metatag PWA:** Inclusão de `<meta name="mobile-web-app-capable" content="yes" />` para eliminar o aviso de depreciação do Safari/Chrome.
 
 
 
