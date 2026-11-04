@@ -358,6 +358,15 @@ Todas as fases planejadas para o Minimum Viable Product (MVP) do CoupleFin foram
 - **Aprimoramento Contábil e Auditoria no DRE ([DRE.tsx](file:///d:/Repositorios/coupleFin/src/pages/DRE.tsx)):**
   - Mapeamento bidirecional completo para os 6 grupos do dropdown de Tipos de Despesa (`custo`, `despesa_administrativa`, `despesa_financeira`, `despesa_operacional`, `imposto`, `receita`), eliminando a perda de lançamentos por divergências de plural/singular ou masculino/feminino.
   - Implementação da linha **`(-) Despesas Não Classificadas`**, com alerta de auditoria em tela, botão para expandir e auditar lançamentos órfãos, e integração no cálculo do Resultado Líquido e na exportação em Excel.
+- **Transformação do Módulo de Relatórios em Central Analítica Executiva ([Relatorios.tsx](file:///d:/Repositorios/coupleFin/src/pages/Relatorios.tsx) e [index.css](file:///d:/Repositorios/coupleFin/src/index.css)):**
+  - **Filtro de Natureza Operacional:** Adicionado seletor para *Apenas Despesas*, *Apenas Receitas* e *Todas*, resolvendo o problema de mistura de sinais negativos/positivos e faturamento de clientes sob "Sem Fornecedor".
+  - **Classificação Inteligente de Despesas Diretas (Sem Fornecedor):** Lançamentos de folha de pagamento, salários, encargos, acordos bancários (ex: Banco Safra) e despesas diretas agora são agrupados automaticamente em categorias executivas dedicadas (`Folha de Pagamento & Salários`, `Acordos & Compromissos Financeiros`), sem serem somados ou abatidos de faturamentos brutos.
+  - **Cálculo Preciso da Representatividade (%):** Correção da base de cálculo de porcentagem (calculada diretamente sobre o total de despesas para itens de despesa, e sobre receitas para itens de receita), eliminando distorções de percentuais anômalos e garantindo que o totalizador feche precisamente em 100%.
+  - **Drilldown Analítico Multinível:** Estrutura expansível por Fornecedor, Centro de Custo, Categoria (Tipo de Despesa) e Conta Bancária, com subagrupamentos e listagem analítica dos lançamentos individuais (Data, Descrição, NF/Doc, Categoria, Conta e Valor).
+  - **KPIs Executivos no Topo:** Cards de Total Consolidado, Maior Concentração (Top 1 e % de participação), Total de Lançamentos e Ticket Médio.
+  - **Período Flexível e Busca Rápida:** Suporte a Mês Fechado e Período Livre (Data Inicial e Data Final), além de campo de busca instantânea na listagem.
+  - **Correção Definitiva da Impressão/PDF:** Solução do bug do `tfoot` repetindo em cada página intermediária (`tfoot { display: table-row-group !important; }`), desbloqueio do container de scroll (`overflow: visible !important; height: auto !important;`), quebra limpa de linhas (`break-inside: avoid;`) e cabeçalho oficial timbrado com logo, dados cadastrais e metadados.
+  - **Exportação Excel Avançada:** Geração de planilha com duas abas estruturadas (Aba 1: Resumo Sintético; Aba 2: Detalhamento Analítico).
 
 
 

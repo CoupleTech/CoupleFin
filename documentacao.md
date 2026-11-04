@@ -215,12 +215,22 @@ do sistema e logo variável por empresa — confirmar.
 
 ### 4.10 Relatórios
 Para empresa selecionada e também em visão consolidada (todas as empresas):
-- **Contábil**: lançamentos organizados por plano de contas/classificação
-- **Analítico agrupado**: agrupado por Centro de Custo, por Fornecedor e por Valor
-- **Financeiro**: fluxo de entradas/saídas por conta e período
-
-Todos os relatórios devem suportar os mesmos filtros de período e as mesmas
-exportações do DRE (PDF, Excel, impressão).
+- **Contábil**: lançamentos organizados por plano de contas/classificação (regime de competência).
+- **Financeiro**: fluxo liquidado por data de pagamento (regime de caixa).
+- **Analítico Hierárquico (Drilldown)**:
+  - **Por Fornecedor**: Ranking executivo com percentual de representatividade (%) e detalhamento por Centro de Custo, Tipo de Despesa e Lançamentos individuais.
+  - **Por Centro de Custo**: Visão por departamentos com expansão analítica dos fornecedores e lançamentos que compõem o gasto daquela área.
+  - **Por Categoria (Tipo de Despesa)**: Visão contábil agrupada por categoria com abertura por fornecedor e histórico.
+  - **Por Conta Bancária**: Conciliação de entradas e saídas por conta financeira.
+- **Filtros Avançados**:
+  - Filtro por Natureza: *Apenas Despesas*, *Apenas Receitas* ou *Consolidado*.
+  - Filtro por Período: *Mês/Ano Fechado* ou *Período Livre (Data Inicial e Data Final)*.
+  - Busca Rápida: filtro instantâneo por texto na listagem analítica.
+- **KPIs Executivos**:
+  - Total Consolidado do Período, Maior Concentração (% do Top 1), Quantidade de Lançamentos e Ticket Médio.
+- **Exportação e Impressão Corporativa**:
+  - **Impressão / PDF**: Cabeçalho oficial com logo da empresa, dados cadastrais (CNPJ/Razão Social), metadados do relatório, layout timbrado, correção do bug de repetição de `tfoot` e quebras de página suaves (`break-inside: avoid`).
+  - **Excel**: Geração de workbook com duas abas estruturadas (Aba 1: Resumo Sintético; Aba 2: Detalhamento Analítico com todas as colunas de dados).
 
 **[COMPLEMENTO]** Filtros avançados de busca na listagem de lançamentos (antes mesmo de
 chegar a um relatório fechado): por período, centro de custo, tipo de despesa,

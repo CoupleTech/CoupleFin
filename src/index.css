@@ -189,19 +189,27 @@
 
 /* ── Print Media Queries ── */
 @media print {
+  @page {
+    margin: 10mm 10mm 12mm 10mm;
+    size: portrait;
+  }
+
   /* Ocultar elementos da interface que não devem ser impressos */
-  aside, header, .no-print {
+  aside, header, nav, .no-print {
     display: none !important;
   }
   
-  /* Resetar o layout para ocupar toda a página */
-  body, html, main, #root {
+  /* Resetar o layout para ocupar toda a página sem scroll/overflow truncado */
+  body, html, #root, main, main > div, .overflow-y-auto, .overflow-x-auto, .h-screen {
     width: 100% !important;
     height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
     background: white !important;
+    position: static !important;
   }
 
   main {
@@ -215,6 +223,31 @@
     padding: 0 !important;
     width: 100% !important;
   }
+
+  /* Tabela de impressão: totalizador no final real, cabeçalho repetido no topo de novas páginas */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  /* CRÍTICO: tfoot com table-row-group impede a repetição do total geral no rodapé de cada página intermediária */
+  tfoot {
+    display: table-row-group !important;
+  }
+
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
   
   .print\:block {
     display: block !important;
@@ -222,6 +255,10 @@
 
   .print\:flex {
     display: flex !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
   }
 
   * {
